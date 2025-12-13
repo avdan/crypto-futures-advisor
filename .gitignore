@@ -1,0 +1,58 @@
+### Node / JS / TS ###
+node_modules/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+### Logs ###
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+### Runtime / cache ###
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.turbo/
+.vite/
+
+### Coverage ###
+coverage/
+*.lcov
+
+### Environment files ###
+.env
+.env.*
+!.env.example
+!apps/*/.env.example
+
+### OS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Trash-*
+
+### IDEs ###
+# JetBrains (WebStorm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code (and forks like Cursor)
+.vscode/
+.cursor/
+
+### Misc ###
+*.swp
+*.swo

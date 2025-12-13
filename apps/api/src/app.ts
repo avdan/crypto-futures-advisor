@@ -1,0 +1,32 @@
+import cors from "@fastify/cors";
+import Fastify from "fastify";
+
+import { healthRoutes } from "./routes/health.js";
+import { futuresRoutes } from "./routes/futures.js";
+
+function parseCorsOrigin(raw: string | undefined): true | string[] {
+  if (!raw) return true;
+
+  const origins = raw
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return origins.length > 0 ? origins : true;
+}
+
+export async function buildApp() {
+  const app = Fastify({ logger: true });
+
+  await app.register(cors, {
+    origin: parseCorsOrigin(process.env.CORS_ORIGIN),
+    credentials: true
+  });
+
+  await app.register(healthRoutes);
+  await app.register(futuresRoutes);
+
+  app.get("/", async () => ({ service: "binance-advisor-api" }));
+
+  return app;
+}
