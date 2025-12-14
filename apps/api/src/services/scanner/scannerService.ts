@@ -48,7 +48,7 @@ function parseTimeframes(value: string | undefined): Array<"15m" | "1h"> {
 
 function getScannerConfig(): ScannerConfig {
   return {
-    enabled: parseBool(process.env.SCANNER_ENABLED, true),
+    enabled: parseBool(process.env.SCANNER_ENABLED, false), // Disabled by default, manual runs only
     runOnStart: parseBool(process.env.SCANNER_RUN_ON_START, false),
     intervalMinutes: Math.max(5, parseIntSafe(process.env.SCANNER_INTERVAL_MINUTES, 60)),
     timeframes: parseTimeframes(process.env.SCANNER_TIMEFRAMES),
