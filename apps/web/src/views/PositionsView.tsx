@@ -264,7 +264,11 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
                     <td className={`right mono ${p.unrealizedPnl >= 0 ? "pnlPos" : "pnlNeg"}`}>
                       {formatMoney(p.unrealizedPnl)}
                     </td>
-                    <td className="right mono">{formatNumber(p.leverage, 0)}x</td>
+                    <td className="right mono">
+                      {p.actualLeverage !== null
+                        ? `${formatNumber(p.actualLeverage, 2)}x`
+                        : `${formatNumber(p.leverage, 0)}x`}
+                    </td>
                     <td className="right mono">
                       {p.liquidationPrice ? formatNumber(p.liquidationPrice, 2) : "-"}
                     </td>

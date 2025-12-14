@@ -135,6 +135,15 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
       // Fetch account info for margin data and LLM context
       accountInfo = await fetchFuturesAccountInfo(client);
+
+      // Calculate actual leverage for cross margin positions
+      // (isolated margin positions already have actualLeverage calculated in fetchFuturesPositionRisk)
+      if (position && position.marginType === "cross" && accountInfo && accountInfo.walletEquity > 0) {
+        position = {
+          ...position,
+          actualLeverage: Math.abs(position.notional) / accountInfo.walletEquity
+        };
+      }
     } catch (err) {
       if (err instanceof BinanceHttpError) {
         app.log.warn({ status: err.status, code: err.code }, "Binance upstream error");

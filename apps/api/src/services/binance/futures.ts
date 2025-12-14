@@ -130,6 +130,16 @@ export async function fetchFuturesPositionRisk(client: BinanceSignedClient) {
     const liquidation = Number(row.liquidationPrice);
     const unrealized =
       row.unRealizedProfit ?? row.unrealizedProfit ?? "0";
+    const notional = Number(row.notional);
+    const isolatedMargin =
+      row.marginType === "isolated" ? toNumberOrNull(row.isolatedMargin) : null;
+
+    // For isolated margin, we can calculate actual leverage here
+    // For cross margin, we need wallet equity (calculated in route)
+    let actualLeverage: number | null = null;
+    if (row.marginType === "isolated" && isolatedMargin && isolatedMargin > 0) {
+      actualLeverage = Math.abs(notional) / isolatedMargin;
+    }
 
     return {
       symbol: row.symbol,
@@ -139,11 +149,11 @@ export async function fetchFuturesPositionRisk(client: BinanceSignedClient) {
       entryPrice: Number(row.entryPrice),
       markPrice: Number(row.markPrice),
       unrealizedPnl: Number(unrealized),
-      notional: Number(row.notional),
+      notional,
       leverage: Number(row.leverage),
+      actualLeverage,
       liquidationPrice: liquidation > 0 ? liquidation : null,
-      isolatedMargin:
-        row.marginType === "isolated" ? toNumberOrNull(row.isolatedMargin) : null,
+      isolatedMargin,
       updatedAt: toIsoOrNull(row.updateTime)
     };
   });

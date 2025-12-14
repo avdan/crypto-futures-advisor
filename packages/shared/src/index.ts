@@ -42,6 +42,8 @@ export type FuturesPosition = {
   unrealizedPnl: number;
   notional: number;
   leverage: number;
+  /** Actual leverage = notional / margin used (differs from nominal leverage setting) */
+  actualLeverage: number | null;
   liquidationPrice: number | null;
   isolatedMargin: number | null;
   updatedAt: string | null;

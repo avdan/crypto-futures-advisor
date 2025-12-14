@@ -8,6 +8,7 @@ import type {
 import { BinanceHttpError } from "../services/binance/errors.js";
 import {
   createFuturesClient,
+  fetchFuturesAccountInfo,
   fetchFuturesOpenOrders,
   fetchFuturesPositionRisk
 } from "../services/binance/futures.js";
@@ -28,10 +29,26 @@ export const futuresRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const rows = await fetchFuturesPositionRisk(client);
+      const [rows, accountInfo] = await Promise.all([
+        fetchFuturesPositionRisk(client),
+        fetchFuturesAccountInfo(client)
+      ]);
+
       const nonZeroOnly = (req.query as { nonZero?: string } | undefined)?.nonZero;
-      const positions =
+      const filteredRows =
         nonZeroOnly === "true" ? rows.filter((p) => p.amount !== 0) : rows;
+
+      // Calculate actual leverage for cross margin positions
+      const walletEquity = accountInfo.walletEquity;
+      const positions = filteredRows.map((p) => {
+        if (p.marginType === "cross" && walletEquity > 0 && p.actualLeverage === null) {
+          return {
+            ...p,
+            actualLeverage: Math.abs(p.notional) / walletEquity
+          };
+        }
+        return p;
+      });
 
       const body: FuturesPositionsResponse = {
         fetchedAt: new Date().toISOString(),
