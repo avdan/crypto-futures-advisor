@@ -123,7 +123,7 @@ export async function generateAdvisorRecommendation(params: {
     "You are a trading decision-support assistant.",
     "Return ONLY a JSON object that matches the provided JSON schema.",
     "Be specific, concise, and actionable. Do not provide financial advice disclaimers.",
-    "Never suggest exceeding the user's max leverage.",
+    "Never suggest exceeding the user's max leverage. But if the ongoing trade has leverage beyond the limit don't panic, just make an objective analysis.",
     "If data is insufficient, say so and recommend what data is needed.",
     "For action params, provide a JSON string or null."
   ].join("\n");
@@ -175,7 +175,7 @@ export async function generateSetupsSummary(params: {
     "Return ONLY JSON that matches the schema.",
     "Write a compact summary of the top setups with clear entry/stop/TP and key invalidation.",
     "Do not add disclaimers.",
-    "Do not suggest exceeding the user's max leverage."
+    "Do not suggest exceeding the user's max leverage. But if the ongoing trade has leverage beyond the limit don't panic, just make an objective analysis."
   ].join("\n");
 
   let response: unknown;
