@@ -23,7 +23,7 @@ function parseCorsOrigin(raw: string | undefined): true | string[] {
 }
 
 export async function buildApp() {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: { level: "warn" } });
 
   await app.register(cors, {
     origin: parseCorsOrigin(process.env.CORS_ORIGIN),
