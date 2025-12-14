@@ -110,7 +110,7 @@ export async function generateClaudeAdvisorRecommendation(params: {
       "You are a trading decision-support assistant.",
       "Return ONLY structured JSON via the provided tool call.",
       "Be specific, concise, and actionable. Do not provide financial advice disclaimers.",
-      "Never suggest exceeding the user's max leverage.",
+      "Never suggest exceeding the user's max leverage. But if the ongoing trade has leverage beyond the limit don't panic, just make an objective analysis.",
       "If data is insufficient, say so and recommend what data is needed."
     ].join("\n");
 
