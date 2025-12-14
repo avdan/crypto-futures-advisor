@@ -11,11 +11,12 @@ This plan is optimized for an “advisory-first” bot: it recommends actions, b
    - max leverage (default: `3x`)
    - max risk per trade (e.g. `0.5%`–`2%` of account)
    - max concurrent positions, max correlated exposure
-5. **Notification channels**: in-app only first vs Telegram/Discord/email.
+5. **Notification channels**: in-app + Telegram (chosen).
+6. **LLM providers**: OpenAI + Claude (run in parallel; compare side-by-side).
 
 ## 1) Architecture (what you’re building)
 
-- `apps/api` is the only component that talks to Binance + OpenAI.
+- `apps/api` is the only component that talks to Binance + LLM providers (OpenAI + Claude).
 - `apps/web` is a status + workflow UI (positions → analyze → review recommendations).
 - `packages/shared` holds API contracts (types/schemas).
 
@@ -55,7 +56,7 @@ Next small improvements (optional before Phase 1):
 - Positions and open orders match Binance UI.
 - UI clearly shows whether data is fresh or stale.
 
-## 4) Phase 2 — On-demand advisor (OpenAI + guardrails)
+## 4) Phase 2 — On-demand advisor (OpenAI + Claude + guardrails)
 
 ### Deterministic risk engine (code-first)
 Implement in `apps/api/src/domain/risk/`:
@@ -64,28 +65,41 @@ Implement in `apps/api/src/domain/risk/`:
 - leverage cap enforcement (`<=3x` by default)
 - liquidation proximity checks (warn + suggested reductions)
 
-### OpenAI integration
-Implement in `apps/api/src/services/openai/`:
-- `client.ts`: OpenAI client
-- `schemas.ts`: strict JSON schema for advisor outputs
-- `prompts/`: prompt templates (position management, hedge ideas, scaling plan)
+### LLM provider integration (OpenAI + Claude)
+Implement a provider abstraction in `apps/api/src/services/llm/`:
+- `types.ts`: common request/response interfaces
+- `providers/openai/*`: OpenAI implementation (GPT-5)
+- `providers/anthropic/*`: Anthropic Claude implementation
+- `aggregate.ts`: run enabled providers in parallel (`Promise.allSettled`) with per-provider timeouts
 
 LLM requirements:
 - **Pin model version** in config (no “latest” hardcode).
-- Use **structured outputs** (JSON) for:
+- Use **structured outputs** (JSON) for actionable items:
   - proposed actions (move stop, partial close, hedge, scale plan)
   - levels (entry/stop/TP), confidence, assumptions, invalidation triggers
+- Record inputs/outputs per provider for auditability and debugging.
+- If one provider fails, still return the other provider’s output.
 
 ### Advisor endpoint
 Add:
-- `POST /analysis/position`
+- `POST /futures/analysis/position`
   - input: symbol + current position snapshot + user constraints
-  - output: structured recommendation options + rationale
+  - output: structured recommendation options + rationale, **per provider**
+
+### Action selection → order plan draft (still advisory)
+Add a “draft order plan” step (no execution):
+- UI shows actions from both providers side-by-side, each action selectable.
+- Selected actions are converted into an **order plan draft**:
+  - proposed order types (market/limit/stop/stop-market)
+  - reduce-only flags where appropriate
+  - quantities/percentages and price levels
+- Drafts are validated by deterministic guardrails before being saved.
 
 ### Acceptance criteria
 - Output always conforms to schema.
 - Output never violates leverage/risk constraints (API rejects/filters if it does).
 - Every recommendation includes “why” + “what invalidates this”.
+- User can build an order plan draft from selected actions.
 
 ## 5) Phase 3 — Setup scanner (hourly watchlist)
 
@@ -104,24 +118,28 @@ Later:
 - queue + worker separation (Redis/BullMQ) for reliability
 
 ### API + UI
-- `GET /setups`
-- `POST /watchlist`
+- `GET /watchlist` / `PUT /watchlist`
+- `GET /scanner/status`
+- `GET /scanner/results`
+- `POST /scanner/run`
 - UI: watchlist management + setup results feed
 
 ### Acceptance criteria
 - Scans run on time and results are persisted.
 - Each setup provides entry/stop/TP, R:R, and invalidation.
 
-## 6) Phase 4 — Alerts + journaling
+## 6) Phase 4 — Alerts + Telegram + journaling
 
 Backend:
 - event rules (levels hit, risk thresholds, new setup)
 - dedupe + rate limiting
 - persistence for alerts + analyses
+- Telegram notifier (bot token + chat id, test message endpoint)
 
 Web:
 - notifications panel + activity timeline
 - export (CSV/JSON)
+- notification settings (thresholds, quiet hours, per-symbol toggles)
 
 ## 7) Phase 5 — Optional execution (guardrails + testnet)
 

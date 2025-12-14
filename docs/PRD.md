@@ -14,6 +14,8 @@ The user goal is to target ~10% per trade with up to 3× leverage (constraints a
 - Show a clear “online/healthy” status with data freshness timestamps.
 - Provide explainable, structured recommendations for position management.
 - Scan a watchlist on a schedule and surface ranked setup candidates.
+- Compare analyses from two LLMs (OpenAI + Claude) side-by-side.
+- Let the user select recommended actions to build an order plan draft.
 - Keep exchange secrets secure (never exposed to browser).
 
 ## Non-goals (MVP)
@@ -38,8 +40,9 @@ Active solo trader using Binance (Spot and/or Futures) who wants help with:
 - User selects a position and requests analysis.
 - System returns:
   - current state + risk metrics
-  - scenario-based action options (move stop, scale out, hedge)
+  - scenario-based action options (move stop, scale out, hedge) from **both** LLM providers
   - rationale + invalidation triggers
+  - an “action picker” that turns chosen actions into an order plan draft (preview only)
 
 ### 3) Watchlist → hourly setup scan
 - User configures 5–10 markets.
@@ -47,6 +50,12 @@ Active solo trader using Binance (Spot and/or Futures) who wants help with:
   - entry zone, stop, take-profit(s)
   - expected R:R and confidence/quality score
   - why it qualifies + what invalidates it
+
+### 4) Alerts → Telegram
+- User receives in-app alerts and Telegram notifications for key events:
+  - liquidation proximity / risk thresholds
+  - key levels hit (entry zone, stop, take-profit)
+  - new top setups from scans
 
 ## Functional requirements
 
@@ -61,14 +70,19 @@ Active solo trader using Binance (Spot and/or Futures) who wants help with:
   - leverage caps (default 3×)
   - risk-per-trade caps
   - stop/TP sanity checks
-- OpenAI used for structured options + explanation:
-  - model version pinned in config
-  - structured JSON output required
+- LLM providers used for structured options + explanation (OpenAI + Claude):
+  - model versions pinned in config
+  - structured JSON output required for actionable items
+  - providers run in parallel; failures are isolated
 
 ### Setup scanner
 - Watchlist configuration.
 - Strategy templates + scoring.
 - Hourly scheduling and result persistence.
+
+### Alerts + notifications
+- In-app alert feed + acknowledgement.
+- Telegram notifications (bot token + chat id, rate-limited and deduplicated).
 
 ### UI
 Minimum screens:
@@ -77,6 +91,7 @@ Minimum screens:
 - Setups (feed + detail)
 - Settings (risk constraints, watchlist, API keys)
 - Activity log (analyses, alerts)
+- Order plan drafts (select actions → preview plan)
 
 ## Non-functional requirements
 
@@ -88,4 +103,3 @@ Minimum screens:
 ## Disclosures
 
 Decision-support only. Not financial advice. User is responsible for trades and risk.
-

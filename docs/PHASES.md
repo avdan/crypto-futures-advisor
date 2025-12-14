@@ -24,19 +24,21 @@ Exit criteria:
 - Positions shown accurately vs Binance UI
 - Data freshness visible (timestamps) and resilient to disconnects
 
-## Phase 2 — On-demand position management advisor (OpenAI + guardrails)
+## Phase 2 — On-demand position management advisor (OpenAI + Claude + guardrails)
 
 Deliverables:
 - Analysis request flow: user selects a position → “Analyze now”
 - Deterministic risk engine in code (sizing, stop distance, leverage caps)
-- OpenAI integration for:
-  - structured recommendation options (JSON)
-  - explanation and “what would invalidate this”
-- UI that renders recommendations + confidence + assumptions
+- Modular LLM providers:
+  - OpenAI (GPT-5)
+  - Anthropic Claude
+- Run both providers in parallel and show both analyses side-by-side.
+- UI lets the user select actionable items from either provider to create an **order plan draft** (no execution in this phase).
 
 Exit criteria:
 - Recommendations always respect user constraints (e.g., max 3× leverage)
-- Clear audit log of inputs/outputs for each analysis
+- Both LLM responses are returned independently (one provider can fail without blocking the other).
+- Clear audit log of inputs/outputs per provider and selected actions.
 
 ## Phase 3 — Setup scanner (hourly watchlist scans)
 
@@ -44,16 +46,20 @@ Deliverables:
 - Watchlist configuration (5–10 markets) + timeframe/strategy presets
 - Hourly scanning job (scheduler) producing ranked setup candidates
 - UI for setup list + setup details (entry/stop/TP, R:R, rationale)
+- Optional LLM summary of the top setups (rule-based results + GPT/Claude summaries)
 
 Exit criteria:
 - Scans run on schedule and record results
 - Results explain “why this setup” and “what invalidates it”
 
-## Phase 4 — Alerts + notifications + journaling
+## Phase 4 — Alerts + Telegram + journaling
 
 Deliverables:
 - Alerts for key events (stop proximity, liquidation risk, levels hit, new setups)
-- Notification channels (in-app + at least one external channel)
+- Notification channels:
+  - In-app
+  - Telegram
+- Export endpoints (CSV/JSON) for alerts
 - Journaling/export (CSV/JSON)
 
 Exit criteria:
@@ -70,4 +76,3 @@ Deliverables:
 Exit criteria:
 - Execution never violates configured guardrails
 - Full audit trail of what was sent to Binance and when
-
