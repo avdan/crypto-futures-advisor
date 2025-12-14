@@ -17,12 +17,14 @@ const c = {
   green: "\x1b[32m"
 };
 
-function logLlmStart(provider: "openai" | "anthropic", context: string, model: string | null, inputSize: number) {
+function logLlmStart(provider: "openai" | "anthropic", context: string, model: string | null, input: unknown) {
   const color = provider === "openai" ? c.openai : c.anthropic;
   const label = provider === "openai" ? "OpenAI" : "Claude";
+  const inputStr = JSON.stringify(input, null, 2);
   console.log(`${color}[${label}]${c.reset} Starting ${context}...`);
   console.log(`${c.dim}  Model: ${model ?? "unknown"}${c.reset}`);
-  console.log(`${c.dim}  Input: ${inputSize} chars${c.reset}`);
+  console.log(`${c.dim}  Input (${inputStr.length} chars):${c.reset}`);
+  console.log(`${c.dim}${inputStr}${c.reset}`);
 }
 
 function logLlmEnd(provider: "openai" | "anthropic", context: string, latencyMs: number) {
@@ -47,7 +49,6 @@ export async function runAdvisorProviders(input: unknown): Promise<
 > {
   const openAi = getOpenAiConfig();
   const anthropic = getAnthropicConfig();
-  const inputSize = JSON.stringify(input).length;
 
   const tasks = [
     {
@@ -94,7 +95,7 @@ export async function runAdvisorProviders(input: unknown): Promise<
         return disabled;
       }
 
-      logLlmStart(t.provider, "advisor", t.model, inputSize);
+      logLlmStart(t.provider, "advisor", t.model, input);
       const startedAt = Date.now();
 
       try {
@@ -135,7 +136,6 @@ export async function runAdvisorProviders(input: unknown): Promise<
 export async function runSetupsSummaryProviders(input: unknown): Promise<Array<LlmProviderResult<string>>> {
   const openAi = getOpenAiConfig();
   const anthropic = getAnthropicConfig();
-  const inputSize = JSON.stringify(input).length;
 
   const tasks = [
     {
@@ -182,7 +182,7 @@ export async function runSetupsSummaryProviders(input: unknown): Promise<Array<L
         return disabled;
       }
 
-      logLlmStart(t.provider, "setups-summary", t.model, inputSize);
+      logLlmStart(t.provider, "setups-summary", t.model, input);
       const startedAt = Date.now();
 
       try {
