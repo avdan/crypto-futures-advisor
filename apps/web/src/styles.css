@@ -463,3 +463,164 @@ h1 {
   color: var(--muted);
   opacity: 0.6;
 }
+
+/* Enhanced LLM Output Styles */
+.verdictBox {
+  border: 1px solid rgba(43, 213, 118, 0.35);
+  background: rgba(43, 213, 118, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.statusBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.badgeNeutral {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.analysisSection {
+  margin: 14px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.biasRow {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.biasItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.biasLabel {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.biasBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.tfBehavior {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tfBehavior strong {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.keyLevels {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.levelLabel {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.scenarioList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenarioItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.scenarioProb {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: right;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.scenarioText {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.equityPotential {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.managementGuidance {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.actionBadge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.guidanceRationale {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
