@@ -1,12 +1,10 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { HealthzResponse } from "@binance-advisor/shared";
 
+import { getAnthropicConfig, getOpenAiConfig } from "../config.js";
+
 function isBinanceConfigured() {
   return Boolean(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET);
-}
-
-function isOpenAiConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY);
 }
 
 type BinancePing = HealthzResponse["binance"]["ping"];
@@ -76,6 +74,8 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
   app.get("/healthz", async () => {
     const futuresBaseUrl = process.env.BINANCE_FAPI_BASE_URL ?? "https://fapi.binance.com";
     const ping = await pingBinanceFutures(futuresBaseUrl);
+    const openAi = getOpenAiConfig();
+    const anthropic = getAnthropicConfig();
 
     const response: HealthzResponse = {
       status: "ok",
@@ -88,7 +88,14 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
         ping
       },
       openai: {
-        configured: isOpenAiConfigured()
+        configured: Boolean(openAi),
+        model: openAi?.model ?? null,
+        maxCompletionTokens: openAi?.maxCompletionTokens ?? null
+      },
+      anthropic: {
+        configured: Boolean(anthropic),
+        model: anthropic?.model ?? null,
+        maxTokens: anthropic?.maxTokens ?? null
       }
     };
 

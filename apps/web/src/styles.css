@@ -278,6 +278,10 @@ h1 {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.rowMuted {
+  opacity: 0.65;
+}
+
 .right {
   text-align: right !important;
 }
@@ -306,4 +310,127 @@ h1 {
 
 .pnlNeg {
   color: var(--offline);
+}
+
+.analysisGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .analysisGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analysisCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.analysisTitle {
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.analysisMeta {
+  margin-top: -6px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.analysisRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+
+.analysisLabel {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.analysisList ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.actionList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionItem {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.actionPick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.actionPick input {
+  margin-top: 2px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.textArea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.summaryBox {
+  border: 1px solid rgba(43, 213, 118, 0.25);
+  background: rgba(43, 213, 118, 0.06);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.summaryTitle {
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.summaryText {
+  white-space: pre-wrap;
 }

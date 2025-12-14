@@ -59,6 +59,23 @@ export function DashboardView({ apiBaseUrl, health, lastCheckedAt, error }: Prop
           <span className={health?.openai.configured ? "badgeOk" : "badgeWarn"}>
             {health?.openai.configured ? "Configured" : "Not configured"}
           </span>
+          {health?.openai.model ? <span className="mono">{health.openai.model}</span> : null}
+          {typeof health?.openai.maxCompletionTokens === "number" ? (
+            <span className="mono">max_completion_tokens={health.openai.maxCompletionTokens}</span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="label">Claude</div>
+        <div className="value">
+          <span className={health?.anthropic.configured ? "badgeOk" : "badgeWarn"}>
+            {health?.anthropic.configured ? "Configured" : "Not configured"}
+          </span>
+          {health?.anthropic.model ? <span className="mono">{health.anthropic.model}</span> : null}
+          {typeof health?.anthropic.maxTokens === "number" ? (
+            <span className="mono">max_tokens={health.anthropic.maxTokens}</span>
+          ) : null}
         </div>
       </div>
 
