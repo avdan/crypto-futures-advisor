@@ -95,9 +95,19 @@ export type RiskConstraints = {
   riskPerTradePct: number;
 };
 
+export type RiskAppetite = "low" | "medium" | "high";
+
+export type UserTradingProfile = {
+  riskAppetite: RiskAppetite;
+  maxLeverageNewSetups: number;
+  acceptableDrawdownPct: number;
+  adviseOnTimeframes: boolean;
+};
+
 export type FuturesPositionAnalysisRequest = {
   symbol: string;
   interval?: FuturesKlineInterval;
+  userContext?: string;
 };
 
 export type AdvisorActionType =
@@ -115,13 +125,99 @@ export type AdvisorAction = {
   params?: Record<string, unknown>;
 };
 
+// NEW: Enhanced advisor output types
+export type TradeQualityGrade = "A" | "B" | "DEGRADED";
+export type ThesisStatus = "INTACT" | "WEAKENING" | "INVALIDATED";
+export type PositionStatus = "VALID" | "INVALIDATED";
+export type TimeframeBias = "bearish" | "neutral" | "bullish";
+export type ManagementAction = "HOLD" | "PARTIAL_DERISK" | "FULL_EXIT";
+
+export type TradeQuality = {
+  grade: TradeQualityGrade;
+  original_thesis_status: ThesisStatus;
+};
+
+export type HigherTimeframeBias = {
+  daily: TimeframeBias;
+  h4: TimeframeBias;
+};
+
+export type LowerTimeframeBehavior = {
+  h1: string;
+  m15: string;
+};
+
+export type KeyLevels = {
+  invalidation: number[];
+  continuation: number[];
+};
+
+export type ProbabilityScenario = {
+  scenario: string;
+  probability: number; // 0..1
+};
+
+export type EquityTarget = {
+  reachable: boolean;
+  required_price_level: number | null;
+};
+
+export type EquityPotential = {
+  minimum_target_10pct: EquityTarget;
+  stretch_target_20_30pct: {
+    reachable: boolean;
+    required_price_levels: number[];
+  };
+};
+
+export type ManagementGuidance = {
+  recommended_action: ManagementAction;
+  rationale: string;
+};
+
 export type AdvisorRecommendation = {
+  // EXISTING (keep for backward compat)
   summary: string;
   confidence: number; // 0..1
   actions: AdvisorAction[];
   invalidation: string[];
   risks: string[];
   assumptions: string[];
+
+  // NEW: Enhanced output fields (all optional for backward compat)
+  trade_quality?: TradeQuality;
+  position_status?: PositionStatus;
+  higher_timeframe_bias?: HigherTimeframeBias;
+  lower_timeframe_behavior?: LowerTimeframeBehavior;
+  key_levels?: KeyLevels;
+  scenarios?: ProbabilityScenario[];
+  equity_potential?: EquityPotential;
+  management_guidance?: ManagementGuidance;
+  verdict?: string;
+};
+
+// NEW: Multi-timeframe indicator types
+export type TimeframeIndicatorSet = {
+  interval: FuturesKlineInterval;
+  lastClose: number | null;
+  atr14: number | null;
+  rsi14: number | null;
+  sma20: number | null;
+  sma50: number | null;
+};
+
+export type MultiTimeframeIndicators = {
+  m15: TimeframeIndicatorSet | null;
+  h1: TimeframeIndicatorSet | null;
+  h4: TimeframeIndicatorSet | null;
+  d1: TimeframeIndicatorSet | null;
+};
+
+// NEW: Account equity types
+export type AccountEquityData = {
+  wallet_equity: number;
+  target_return_equity_percent: number;
+  stretch_return_equity_percent: number[];
 };
 
 export type LlmProviderId = "openai" | "anthropic";
@@ -149,6 +245,10 @@ export type FuturesPositionAnalysisResponse = {
     sma20: number | null;
     sma50: number | null;
   } | null;
+  // NEW: Multi-timeframe indicators
+  multiTimeframeIndicators?: MultiTimeframeIndicators;
+  // NEW: Account equity data
+  accountEquity?: AccountEquityData;
   deterministic: {
     suggestedStopLoss: number | null;
     suggestedTakeProfit: number | null;
