@@ -1,6 +1,6 @@
-import type { FuturesKlineInterval } from "@binance-advisor/shared";
+import type { FuturesKlineInterval, TimeframeIndicatorSet, MultiTimeframeIndicators } from "@binance-advisor/shared";
 
-import type { Candle } from "../../domain/indicators/candles.js";
+import { atr, rsi, sma, type Candle } from "../../domain/indicators/candles.js";
 
 type BinanceKlineRow = [
   number, // open time
@@ -44,5 +44,43 @@ export async function fetchFuturesKlines(params: {
     volume: Number(row[5]),
     closeTime: row[6]
   }));
+}
+
+async function fetchTimeframeIndicators(
+  symbol: string,
+  interval: FuturesKlineInterval,
+  limit: number
+): Promise<TimeframeIndicatorSet | null> {
+  try {
+    const candles = await fetchFuturesKlines({ symbol, interval, limit });
+    const closes = candles.map((c) => c.close);
+
+    return {
+      interval,
+      lastClose: closes.at(-1) ?? null,
+      atr14: atr(candles, 14),
+      rsi14: rsi(candles, 14),
+      sma20: sma(closes, 20),
+      sma50: sma(closes, 50)
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchMultiTimeframeIndicators(params: {
+  symbol: string;
+  limit?: number;
+}): Promise<MultiTimeframeIndicators> {
+  const limit = params.limit ?? 200;
+
+  const [m15, h1, h4, d1] = await Promise.all([
+    fetchTimeframeIndicators(params.symbol, "15m", limit),
+    fetchTimeframeIndicators(params.symbol, "1h", limit),
+    fetchTimeframeIndicators(params.symbol, "4h", limit),
+    fetchTimeframeIndicators(params.symbol, "1d", limit)
+  ]);
+
+  return { m15, h1, h4, d1 };
 }
 
