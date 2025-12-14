@@ -10,6 +10,7 @@ type BinanceFuturesAccountInfo = {
   totalCrossWalletBalance: string;
   totalCrossUnPnl: string;
   maxWithdrawAmount: string;
+  totalMaintMargin: string;
 };
 
 type BinanceFuturesPositionRisk = {
@@ -181,6 +182,8 @@ export type AccountEquity = {
   marginBalance: number;
   unrealizedProfit: number;
   availableBalance: number;
+  maintenanceMargin: number;
+  positionInitialMargin: number;
 };
 
 export async function fetchFuturesAccountInfo(
@@ -193,6 +196,8 @@ export async function fetchFuturesAccountInfo(
     walletEquity: Number(data.totalWalletBalance),
     marginBalance: Number(data.totalMarginBalance),
     unrealizedProfit: Number(data.totalUnrealizedProfit),
-    availableBalance: Number(data.availableBalance)
+    availableBalance: Number(data.availableBalance),
+    maintenanceMargin: Number(data.totalMaintMargin),
+    positionInitialMargin: Number(data.totalPositionInitialMargin)
   };
 }

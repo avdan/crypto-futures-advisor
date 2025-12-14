@@ -220,6 +220,18 @@ export type AccountEquityData = {
   stretch_return_equity_percent: number[];
 };
 
+// Account margin info for display
+export type AccountMarginInfo = {
+  marginRatio: number; // Maintenance margin / margin balance * 100
+  maintenanceMargin: number;
+  accountEquity: number; // Wallet balance
+  marginBalance: number;
+  positionValue: number; // Total notional of open positions
+  actualLeverage: number; // Position value / account equity
+  unrealizedPnl: number;
+  availableBalance: number;
+};
+
 export type LlmProviderId = "openai" | "anthropic";
 
 export type LlmProviderResult<T> = {
@@ -247,8 +259,10 @@ export type FuturesPositionAnalysisResponse = {
   } | null;
   // NEW: Multi-timeframe indicators
   multiTimeframeIndicators?: MultiTimeframeIndicators;
-  // NEW: Account equity data
+  // NEW: Account equity data (for LLM context)
   accountEquity?: AccountEquityData;
+  // NEW: Account margin info (for display)
+  accountMarginInfo?: AccountMarginInfo;
   deterministic: {
     suggestedStopLoss: number | null;
     suggestedTakeProfit: number | null;

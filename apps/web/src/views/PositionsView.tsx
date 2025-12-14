@@ -381,6 +381,55 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
         </table>
       </div>
 
+      {analysis?.accountMarginInfo ? (
+        <>
+          <div className="divider" />
+          <div className="panelHeader">
+            <div>
+              <div className="panelTitle">Account Margin</div>
+            </div>
+          </div>
+          <div className="marginInfoGrid">
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Margin Ratio</div>
+              <div className={`marginInfoValue mono ${analysis.accountMarginInfo.marginRatio > 50 ? "pnlNeg" : analysis.accountMarginInfo.marginRatio > 25 ? "pnlWarn" : ""}`}>
+                {formatNumber(analysis.accountMarginInfo.marginRatio, 2)}%
+              </div>
+            </div>
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Maintenance Margin</div>
+              <div className="marginInfoValue mono">
+                ${formatNumber(analysis.accountMarginInfo.maintenanceMargin, 2)}
+              </div>
+            </div>
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Account Equity</div>
+              <div className="marginInfoValue mono">
+                ${formatNumber(analysis.accountMarginInfo.accountEquity, 2)}
+              </div>
+            </div>
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Position Value</div>
+              <div className="marginInfoValue mono">
+                ${formatNumber(analysis.accountMarginInfo.positionValue, 2)}
+              </div>
+            </div>
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Actual Leverage</div>
+              <div className="marginInfoValue mono">
+                {formatNumber(analysis.accountMarginInfo.actualLeverage, 2)}x
+              </div>
+            </div>
+            <div className="marginInfoItem">
+              <div className="marginInfoLabel">Unrealized PnL</div>
+              <div className={`marginInfoValue mono ${analysis.accountMarginInfo.unrealizedPnl >= 0 ? "pnlPos" : "pnlNeg"}`}>
+                {formatMoney(analysis.accountMarginInfo.unrealizedPnl)}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
+
       <div className="divider" />
 
       <div className="panelHeader">

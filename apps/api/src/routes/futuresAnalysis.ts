@@ -1,12 +1,15 @@
 import type { FastifyPluginAsync } from "fastify";
 import type {
   AccountEquityData,
+  AccountMarginInfo,
   ApiErrorResponse,
   FuturesKlineInterval,
   FuturesPositionAnalysisRequest,
   FuturesPositionAnalysisResponse,
   MultiTimeframeIndicators
 } from "@binance-advisor/shared";
+
+import type { AccountEquity } from "../services/binance/futures.js";
 
 import {
   getDefaultKlineInterval,
@@ -119,16 +122,19 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
     let position = null as FuturesPositionAnalysisResponse["position"];
     let openOrders: FuturesPositionAnalysisResponse["openOrders"] = [];
-    let walletEquity: number | undefined;
+    let accountInfo: AccountEquity | undefined;
+    let totalPositionValue = 0;
 
     try {
       const rows = await fetchFuturesPositionRisk(client);
       position = rows.find((p) => p.symbol === symbol && p.amount !== 0) ?? null;
       openOrders = await fetchFuturesOpenOrders(client, symbol);
 
-      // Fetch account equity for LLM context
-      const accountInfo = await fetchFuturesAccountInfo(client);
-      walletEquity = accountInfo.walletEquity;
+      // Calculate total position value from all positions
+      totalPositionValue = rows.reduce((sum, p) => sum + Math.abs(p.notional), 0);
+
+      // Fetch account info for margin data and LLM context
+      accountInfo = await fetchFuturesAccountInfo(client);
     } catch (err) {
       if (err instanceof BinanceHttpError) {
         app.log.warn({ status: err.status, code: err.code }, "Binance upstream error");
@@ -234,11 +240,29 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
     // Build equity targets for LLM input and response
     const equityTargets = getEquityTargets();
-    const accountEquity: AccountEquityData | undefined = walletEquity !== undefined
+    const accountEquity: AccountEquityData | undefined = accountInfo
       ? {
-          wallet_equity: walletEquity,
+          wallet_equity: accountInfo.walletEquity,
           target_return_equity_percent: equityTargets.targetReturnPct,
           stretch_return_equity_percent: equityTargets.stretchReturnPct
+        }
+      : undefined;
+
+    // Build account margin info for display
+    const accountMarginInfo: AccountMarginInfo | undefined = accountInfo
+      ? {
+          marginRatio: accountInfo.marginBalance > 0
+            ? (accountInfo.maintenanceMargin / accountInfo.marginBalance) * 100
+            : 0,
+          maintenanceMargin: accountInfo.maintenanceMargin,
+          accountEquity: accountInfo.walletEquity,
+          marginBalance: accountInfo.marginBalance,
+          positionValue: totalPositionValue,
+          actualLeverage: accountInfo.walletEquity > 0
+            ? totalPositionValue / accountInfo.walletEquity
+            : 0,
+          unrealizedPnl: accountInfo.unrealizedProfit,
+          availableBalance: accountInfo.availableBalance
         }
       : undefined;
 
@@ -270,6 +294,7 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       indicators,
       multiTimeframeIndicators,
       accountEquity,
+      accountMarginInfo,
       deterministic: {
         suggestedStopLoss,
         suggestedTakeProfit,

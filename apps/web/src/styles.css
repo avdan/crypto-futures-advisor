@@ -624,3 +624,41 @@ h1 {
   line-height: 1.5;
   color: var(--text);
 }
+
+/* Account Margin Info Grid */
+.marginInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .marginInfoGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.marginInfoItem {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.marginInfoLabel {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.marginInfoValue {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pnlWarn {
+  color: var(--checking);
+}
