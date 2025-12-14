@@ -17,6 +17,13 @@ const positionStatuses = ["VALID", "INVALIDATED"] as const;
 const timeframeBiases = ["bearish", "neutral", "bullish"] as const;
 const managementActions = ["HOLD", "PARTIAL_DERISK", "FULL_EXIT"] as const;
 
+// v3: BTC context enums
+const btcRegimes = ["risk_on", "risk_off", "chop"] as const;
+const btcBiases = ["bullish", "neutral", "bearish"] as const;
+const btcVolatilities = ["high", "normal", "low"] as const;
+const btcDriverFlags = ["btc_driving", "alt_idiosyncratic"] as const;
+const altBtcRelativeStrengths = ["outperforming", "neutral", "underperforming"] as const;
+
 // Zod schemas for OpenAI structured outputs
 export const advisorActionSchema = z.object({
   type: z.enum(actionTypes),
@@ -74,6 +81,29 @@ const confidenceDriverSchema = z.object({
   weight: z.number().int().min(0).max(100)
 });
 
+// v3: BTC context schema
+const btcKeyLevelsSchema = z.object({
+  support: z.tuple([z.number(), z.number()]),
+  resistance: z.tuple([z.number(), z.number()])
+});
+
+const btcContextSchema = z.object({
+  regime: z.enum(btcRegimes),
+  bias: z.enum(btcBiases),
+  volatility: z.enum(btcVolatilities),
+  key_levels: btcKeyLevelsSchema,
+  driver_flag: z.enum(btcDriverFlags),
+  impact_on_alt: z.string()
+});
+
+// v3: ALTBTC context schema
+const altBtcContextSchema = z.object({
+  symbol: z.string(),
+  relative_strength: z.enum(altBtcRelativeStrengths),
+  structure: z.string(),
+  implication: z.string()
+});
+
 export const advisorRecommendationSchema = z.object({
   // EXISTING required fields
   summary: z.string(),
@@ -96,7 +126,11 @@ export const advisorRecommendationSchema = z.object({
 
   // v2: Confidence explanation fields
   what_would_change_mind: z.array(z.string()).nullable(),
-  drivers: z.array(confidenceDriverSchema).nullable()
+  drivers: z.array(confidenceDriverSchema).nullable(),
+
+  // v3: BTC market context (for ALT analysis only)
+  btc_context: btcContextSchema.nullable(),
+  altbtc_context: altBtcContextSchema.nullable()
 });
 
 export const setupsSummarySchema = z.object({
@@ -121,6 +155,13 @@ const THESIS_STATUSES = ["INTACT", "WEAKENING", "INVALIDATED"];
 const POSITION_STATUSES = ["VALID", "INVALIDATED"];
 const TIMEFRAME_BIASES = ["bearish", "neutral", "bullish"];
 const MANAGEMENT_ACTIONS = ["HOLD", "PARTIAL_DERISK", "FULL_EXIT"];
+
+// v3: BTC context JSON schema constants
+const BTC_REGIMES = ["risk_on", "risk_off", "chop"];
+const BTC_BIASES = ["bullish", "neutral", "bearish"];
+const BTC_VOLATILITIES = ["high", "normal", "low"];
+const BTC_DRIVER_FLAGS = ["btc_driving", "alt_idiosyncratic"];
+const ALTBTC_RELATIVE_STRENGTHS = ["outperforming", "neutral", "underperforming"];
 
 export const advisorRecommendationJsonSchema = {
   name: "advisor_recommendation",
@@ -253,6 +294,50 @@ export const advisorRecommendationJsonSchema = {
           },
           required: ["factor", "impact", "weight"]
         }
+      },
+
+      // v3: BTC market context
+      btc_context: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          regime: { type: "string", enum: BTC_REGIMES },
+          bias: { type: "string", enum: BTC_BIASES },
+          volatility: { type: "string", enum: BTC_VOLATILITIES },
+          key_levels: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              support: {
+                type: "array",
+                items: { type: "number" },
+                minItems: 2,
+                maxItems: 2
+              },
+              resistance: {
+                type: "array",
+                items: { type: "number" },
+                minItems: 2,
+                maxItems: 2
+              }
+            },
+            required: ["support", "resistance"]
+          },
+          driver_flag: { type: "string", enum: BTC_DRIVER_FLAGS },
+          impact_on_alt: { type: "string" }
+        },
+        required: ["regime", "bias", "volatility", "key_levels", "driver_flag", "impact_on_alt"]
+      },
+      altbtc_context: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          symbol: { type: "string" },
+          relative_strength: { type: "string", enum: ALTBTC_RELATIVE_STRENGTHS },
+          structure: { type: "string" },
+          implication: { type: "string" }
+        },
+        required: ["symbol", "relative_strength", "structure", "implication"]
       }
     },
     required: ["summary", "confidence", "actions", "invalidation", "risks", "assumptions"]

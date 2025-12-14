@@ -2,7 +2,9 @@ import type { FastifyPluginAsync } from "fastify";
 import type {
   AccountEquityData,
   AccountMarginInfo,
+  AltBtcCandleData,
   ApiErrorResponse,
+  BtcCandleData,
   CalculatedEquityTargets,
   FuturesKlineInterval,
   FuturesPositionAnalysisRequest,
@@ -36,6 +38,8 @@ import {
   fetchFuturesPositionRisk
 } from "../services/binance/futures.js";
 import {
+  fetchAltBtcCandles,
+  fetchBtcContextCandles,
   fetchFuturesKlines,
   fetchMultiTimeframeCandles,
   fetchMultiTimeframeIndicators
@@ -71,6 +75,10 @@ function normalizeSymbol(value: unknown): string | null {
 
 function badRequest(message: string): ApiErrorResponse {
   return { error: { code: "BAD_REQUEST", message } };
+}
+
+function isBtcSymbol(symbol: string): boolean {
+  return symbol === "BTCUSDT" || symbol === "BTCUSDC";
 }
 
 export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
@@ -188,10 +196,15 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
     let indicators: FuturesPositionAnalysisResponse["indicators"] = null;
     let multiTimeframeIndicators: MultiTimeframeIndicators | undefined;
     let rawCandles: RawCandleData | undefined;
+    let btcCandles: BtcCandleData | undefined;
+    let altBtcCandles: AltBtcCandleData | undefined;
+
+    // Determine if we need BTC context (only for ALT symbols)
+    const isAltSymbol = !isBtcSymbol(symbol);
 
     try {
-      // Fetch regular indicators, multi-timeframe, and raw candles in parallel
-      const [candles, mtfIndicators, mtfCandles] = await Promise.all([
+      // Fetch regular indicators, multi-timeframe, raw candles, and BTC context in parallel
+      const fetchPromises: Promise<unknown>[] = [
         fetchFuturesKlines({
           symbol,
           interval,
@@ -199,7 +212,21 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
         }),
         fetchMultiTimeframeIndicators({ symbol, limit: getKlineLimit() }),
         fetchMultiTimeframeCandles({ symbol })
-      ]);
+      ];
+
+      // Add BTC context fetch for ALT symbols
+      if (isAltSymbol) {
+        fetchPromises.push(fetchBtcContextCandles({ mode: "advisor" }));
+      }
+
+      const results = await Promise.all(fetchPromises);
+      const candles = results[0] as Awaited<ReturnType<typeof fetchFuturesKlines>>;
+      const mtfIndicators = results[1] as MultiTimeframeIndicators;
+      const mtfCandles = results[2] as RawCandleData;
+
+      if (isAltSymbol && results[3]) {
+        btcCandles = results[3] as BtcCandleData;
+      }
 
       const closes = candles.map((c) => c.close);
       indicators = {
@@ -213,6 +240,18 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
       multiTimeframeIndicators = mtfIndicators;
       rawCandles = mtfCandles;
+
+      // For ALTBTC: fetch conditionally (for now, we skip to keep initial implementation simple)
+      // ALTBTC will be fetched when: BTC volatility is high, confidence is borderline, or at decision point
+      // This requires a second-pass or can be done proactively based on position state
+      // For v1, we can enable ALTBTC when position exists and unrealized PnL is significant
+      if (isAltSymbol && position && Math.abs(position.unrealizedPnl) > 100) {
+        try {
+          altBtcCandles = await fetchAltBtcCandles({ altSymbol: symbol }) ?? undefined;
+        } catch {
+          // ALTBTC pair might not exist, that's okay
+        }
+      }
     } catch (err) {
       app.log.info({ err }, "Unable to fetch klines/indicators");
       indicators = null;
@@ -316,7 +355,10 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       // Backend-calculated equity targets for LLM to assess reachability
       calculated_equity_targets: calculatedEquityTargets,
       // Raw OHLCV candles for LLM price action analysis
-      candles: rawCandles
+      candles: rawCandles,
+      // v3: BTC context candles (for ALT analysis)
+      btc_candles: btcCandles,
+      altbtc_candles: altBtcCandles
     });
 
     const response: FuturesPositionAnalysisResponse = {

@@ -1,4 +1,10 @@
-import type { CalculatedEquityTargets, RawCandleData, UserTradingProfile } from "@binance-advisor/shared";
+import type {
+  AltBtcCandleData,
+  BtcCandleData,
+  CalculatedEquityTargets,
+  RawCandleData,
+  UserTradingProfile
+} from "@binance-advisor/shared";
 
 export type LlmInputWithProfile = {
   userProfile?: UserTradingProfile;
@@ -11,6 +17,9 @@ export type LlmInputWithProfile = {
   calculated_equity_targets?: CalculatedEquityTargets;
   multi_timeframe_indicators?: unknown;
   candles?: RawCandleData;
+  // v3: BTC context candles (for ALT analysis)
+  btc_candles?: BtcCandleData;
+  altbtc_candles?: AltBtcCandleData;
   [key: string]: unknown;
 };
 
@@ -25,6 +34,14 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
     (input.candles.h1?.length ?? 0) > 0 ||
     (input.candles.h4?.length ?? 0) > 0 ||
     (input.candles.d1?.length ?? 0) > 0
+  );
+  const hasBtcCandles = input.btc_candles && (
+    (input.btc_candles.h4?.length ?? 0) > 0 ||
+    (input.btc_candles.d1?.length ?? 0) > 0
+  );
+  const hasAltBtcCandles = input.altbtc_candles && (
+    (input.altbtc_candles.h4?.length ?? 0) > 0 ||
+    (input.altbtc_candles.d1?.length ?? 0) > 0
   );
 
   const lines = [
@@ -102,6 +119,54 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
     lines.push("");
   }
 
+  if (hasBtcCandles) {
+    const btc = input.btc_candles!;
+    lines.push("## BTC CONTEXT REQUIREMENT");
+    lines.push("For this ALT/USDT analysis, you MUST analyze BTCUSDT as market regime context.");
+    lines.push("BTC analysis must be lightweight and structured, not a full report.");
+    lines.push("");
+    lines.push("BTC candle data provided:");
+    lines.push(`- btc_candles.h4: ${btc.h4?.length ?? 0} candles (4-hour)`);
+    lines.push(`- btc_candles.d1: ${btc.d1?.length ?? 0} candles (daily)`);
+    if (btc.w1 && btc.w1.length > 0) {
+      lines.push(`- btc_candles.w1: ${btc.w1.length} candles (weekly, derived from daily)`);
+    }
+    lines.push("");
+    lines.push("Required BTC outputs (btc_context field):");
+    lines.push("- regime: risk_on | risk_off | chop");
+    lines.push("- bias: bullish | neutral | bearish");
+    lines.push("- volatility: high | normal | low (based on ATR/candle ranges)");
+    lines.push("- key_levels: { support: [S1, S2], resistance: [R1, R2] } - 2 of each");
+    lines.push("- driver_flag: btc_driving | alt_idiosyncratic");
+    lines.push("- impact_on_alt: 1-3 sentences on how BTC affects ALT probabilities");
+    lines.push("");
+    lines.push("Decision rule: BTC adjusts scenario probabilities, does NOT override ALT structure.");
+    lines.push("- risk_off or high volatility: increase downside wick probability");
+    lines.push("- risk_on: increase ALT continuation only if ALT structure agrees");
+    lines.push("- chop: treat ALT moves as more likely idiosyncratic");
+    lines.push("");
+  }
+
+  if (hasAltBtcCandles) {
+    const altbtc = input.altbtc_candles!;
+    lines.push("## ALTBTC RELATIVE STRENGTH");
+    lines.push(`ALTBTC candles provided for ${altbtc.symbol} relative strength assessment.`);
+    lines.push("");
+    lines.push(`ALTBTC candle data: h4 (${altbtc.h4?.length ?? 0}), d1 (${altbtc.d1?.length ?? 0})`);
+    lines.push("");
+    lines.push("Required ALTBTC outputs (altbtc_context field):");
+    lines.push("- symbol: the ALTBTC pair being analyzed");
+    lines.push("- relative_strength: outperforming | neutral | underperforming vs BTC");
+    lines.push("- structure: describe ALTBTC price action (HLs, LLs, key MA position)");
+    lines.push("- implication: 1-2 sentences on how this affects runner management");
+    lines.push("");
+    lines.push("Interpretation:");
+    lines.push("- ALTBTC making LLs / below key MAs: reduce extension probability");
+    lines.push("- ALTBTC holding structure / making HLs: favor holding runners");
+    lines.push("- ALTBTC does NOT override ALTUSDT execution or invalidation levels");
+    lines.push("");
+  }
+
   if (equityTargets) {
     lines.push("## EQUITY TARGETS (PRE-CALCULATED)");
     lines.push(`- Position: ${equityTargets.direction} from $${equityTargets.entry_price.toFixed(2)}`);
@@ -164,6 +229,10 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
 export function buildSetupsSummarySystemPrompt(input: LlmInputWithProfile): string {
   const profile = input.userProfile;
   const userContext = input.userContext;
+  const hasBtcCandles = input.btc_candles && (
+    (input.btc_candles.h4?.length ?? 0) > 0 ||
+    (input.btc_candles.d1?.length ?? 0) > 0
+  );
 
   const lines = [
     "You are a trading assistant summarizing rule-based scan results.",
@@ -171,6 +240,20 @@ export function buildSetupsSummarySystemPrompt(input: LlmInputWithProfile): stri
     "Do not add disclaimers.",
     ""
   ];
+
+  if (hasBtcCandles) {
+    const btc = input.btc_candles!;
+    lines.push("## BTC MARKET CONTEXT");
+    lines.push("BTC candle data is provided for macro context when evaluating ALT setups.");
+    lines.push(`- BTC 4H: ${btc.h4?.length ?? 0} candles`);
+    lines.push(`- BTC 1D: ${btc.d1?.length ?? 0} candles`);
+    lines.push("");
+    lines.push("Consider BTC regime when ranking setup quality:");
+    lines.push("- risk_on: favor continuation and breakout setups");
+    lines.push("- risk_off: be cautious with LONG setups, favor SHORT or skip");
+    lines.push("- chop: reduce conviction on all setups");
+    lines.push("");
+  }
 
   if (profile) {
     lines.push("USER PROFILE:");

@@ -200,6 +200,10 @@ export type AdvisorRecommendation = {
   // v2: Confidence explanation fields
   what_would_change_mind: string[] | null;
   drivers: ConfidenceDriver[] | null;
+
+  // v3: BTC market context (for ALT analysis only)
+  btc_context: BtcContext | null;
+  altbtc_context: AltBtcContext | null;
 };
 
 // NEW: Multi-timeframe indicator types
@@ -242,6 +246,50 @@ export type ConfidenceDriver = {
   factor: string;
   impact: "positive" | "negative" | "neutral";
   weight: number;  // 0-100
+};
+
+// BTC market regime context types
+export type BtcRegime = "risk_on" | "risk_off" | "chop";
+export type BtcBias = "bullish" | "neutral" | "bearish";
+export type BtcVolatility = "high" | "normal" | "low";
+export type BtcDriverFlag = "btc_driving" | "alt_idiosyncratic";
+
+export type BtcKeyLevels = {
+  support: [number, number];
+  resistance: [number, number];
+};
+
+export type BtcContext = {
+  regime: BtcRegime;
+  bias: BtcBias;
+  volatility: BtcVolatility;
+  key_levels: BtcKeyLevels;
+  driver_flag: BtcDriverFlag;
+  impact_on_alt: string;
+};
+
+// ALTBTC relative strength context
+export type AltBtcRelativeStrength = "outperforming" | "neutral" | "underperforming";
+
+export type AltBtcContext = {
+  symbol: string;  // e.g., "ZECBTC"
+  relative_strength: AltBtcRelativeStrength;
+  structure: string;  // e.g., "making HLs above key MAs"
+  implication: string;  // 1-2 sentences
+};
+
+// BTC candle data for LLM input (separate from ALT candles)
+export type BtcCandleData = {
+  h4: LlmCandle[];
+  d1: LlmCandle[];
+  w1?: LlmCandle[];
+};
+
+// ALTBTC candle data for relative strength analysis
+export type AltBtcCandleData = {
+  symbol: string;  // e.g., "ZECBTC"
+  h4: LlmCandle[];
+  d1: LlmCandle[];
 };
 
 // NEW: Account equity types

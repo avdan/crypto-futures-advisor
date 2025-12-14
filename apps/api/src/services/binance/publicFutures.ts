@@ -1,4 +1,6 @@
 import type {
+  AltBtcCandleData,
+  BtcCandleData,
   FuturesKlineInterval,
   LlmCandle,
   MultiTimeframeIndicators,
@@ -129,4 +131,112 @@ export async function fetchMultiTimeframeCandles(params: {
   ]);
 
   return { m15, h1, h4, d1 };
+}
+
+// BTC context candle limits per mode
+const BTC_CONTEXT_LIMITS = {
+  advisor: { h4: 25, d1: 15, w1: 10 },
+  scanner: { h4: 15, d1: 10 }
+} as const;
+
+// ALTBTC relative strength candle limits
+const ALTBTC_LIMITS = {
+  h4: 20,
+  d1: 12
+} as const;
+
+/**
+ * Fetch BTCUSDT candles for market regime context.
+ * Used when analyzing ALT symbols to provide macro context.
+ */
+export async function fetchBtcContextCandles(params: {
+  mode: "advisor" | "scanner";
+  includeWeekly?: boolean;
+}): Promise<BtcCandleData> {
+  const limits = BTC_CONTEXT_LIMITS[params.mode];
+
+  // Always fetch h4 and d1
+  const [h4, d1] = await Promise.all([
+    fetchRawCandlesForTimeframe("BTCUSDT", "4h", limits.h4),
+    fetchRawCandlesForTimeframe("BTCUSDT", "1d", limits.d1)
+  ]);
+
+  // Weekly only for advisor mode when explicitly requested
+  let w1: LlmCandle[] | undefined;
+  if (params.includeWeekly && params.mode === "advisor") {
+    // Note: Binance doesn't have 1w interval on futures, so we fetch 70 daily candles (10 weeks)
+    // and aggregate into weekly bars
+    const weeklyDailyCandles = await fetchRawCandlesForTimeframe("BTCUSDT", "1d", BTC_CONTEXT_LIMITS.advisor.w1 * 7);
+    if (weeklyDailyCandles.length > 0) {
+      w1 = aggregateDailyToWeekly(weeklyDailyCandles, BTC_CONTEXT_LIMITS.advisor.w1);
+    }
+  }
+
+  return { h4, d1, w1 };
+}
+
+/**
+ * Aggregate daily candles into weekly candles.
+ * Takes groups of 7 daily candles and creates OHLCV weekly bars.
+ */
+function aggregateDailyToWeekly(dailyCandles: LlmCandle[], weekCount: number): LlmCandle[] {
+  const weekly: LlmCandle[] = [];
+  const daysPerWeek = 7;
+
+  // Start from the end to get most recent weeks
+  for (let i = dailyCandles.length - daysPerWeek; i >= 0 && weekly.length < weekCount; i -= daysPerWeek) {
+    const weekCandles = dailyCandles.slice(i, i + daysPerWeek);
+    const firstCandle = weekCandles[0];
+    const lastCandle = weekCandles[weekCandles.length - 1];
+    if (!firstCandle || !lastCandle) continue;
+
+    weekly.unshift({
+      t: firstCandle.t,
+      o: firstCandle.o,
+      h: Math.max(...weekCandles.map(c => c.h)),
+      l: Math.min(...weekCandles.map(c => c.l)),
+      c: lastCandle.c,
+      v: weekCandles.reduce((sum, c) => sum + c.v, 0)
+    });
+  }
+
+  return weekly;
+}
+
+/**
+ * Derive ALTBTC symbol from ALTUSDT symbol.
+ * e.g., "ZECUSDT" -> "ZECBTC"
+ */
+function deriveAltBtcSymbol(altUsdtSymbol: string): string | null {
+  if (!altUsdtSymbol.endsWith("USDT")) return null;
+  const base = altUsdtSymbol.slice(0, -4); // Remove "USDT"
+  return `${base}BTC`;
+}
+
+/**
+ * Fetch ALTBTC candles for relative strength analysis.
+ * Returns null if the ALTBTC pair doesn't exist on Binance Futures.
+ */
+export async function fetchAltBtcCandles(params: {
+  altSymbol: string;
+}): Promise<AltBtcCandleData | null> {
+  const altBtcSymbol = deriveAltBtcSymbol(params.altSymbol);
+  if (!altBtcSymbol) return null;
+
+  try {
+    const [h4, d1] = await Promise.all([
+      fetchRawCandlesForTimeframe(altBtcSymbol, "4h", ALTBTC_LIMITS.h4),
+      fetchRawCandlesForTimeframe(altBtcSymbol, "1d", ALTBTC_LIMITS.d1)
+    ]);
+
+    // If both are empty, the pair likely doesn't exist
+    if (h4.length === 0 && d1.length === 0) {
+      return null;
+    }
+
+    return { symbol: altBtcSymbol, h4, d1 };
+  } catch {
+    // Pair doesn't exist or fetch failed
+    return null;
+  }
 }

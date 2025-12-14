@@ -3,10 +3,11 @@ import path from "node:path";
 
 import type { ScannerRunResponse, ScannerStatusResponse, SetupCandidate } from "@binance-advisor/shared";
 
-import { getKlineLimit, getRiskConstraints } from "../../config.js";
+import { getKlineLimit, getRiskConstraints, getUserTradingProfile } from "../../config.js";
 import { calculatePositionSizing } from "../../domain/risk/positionSizing.js";
 import { runSetupScan } from "../../domain/scanner/runScan.js";
 import { createFuturesClient, fetchFuturesAccountInfo } from "../binance/futures.js";
+import { fetchBtcContextCandles } from "../binance/publicFutures.js";
 import { runSetupsSummaryProviders } from "../llm/aggregate.js";
 import { resolveApiDataDir } from "../storage/paths.js";
 import type { WatchlistStore } from "../watchlist/store.js";
@@ -164,15 +165,30 @@ export function createScannerService(params: {
       });
 
       const top3: SetupCandidate[] = resultsWithSizing.slice(0, 3);
+
+      // Fetch BTC context candles for scanner mode (smaller dataset)
+      let btcCandles;
+      try {
+        btcCandles = await fetchBtcContextCandles({ mode: "scanner" });
+      } catch (err) {
+        params.logger.warn({ err }, "Failed to fetch BTC context candles for scanner");
+      }
+
+      const userProfile = getUserTradingProfile();
+
       const llmProviders =
         top3.length > 0
           ? await runSetupsSummaryProviders({
               constraints,
-              top: top3
+              top: top3,
+              btc_candles: btcCandles,
+              userProfile
             })
           : await runSetupsSummaryProviders({
               constraints,
-              top: []
+              top: [],
+              btc_candles: btcCandles,
+              userProfile
             });
 
       const response: ScannerRunResponse = {
