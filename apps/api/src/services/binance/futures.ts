@@ -1,5 +1,17 @@
 import { BinanceSignedClient } from "./signedClient.js";
 
+type BinanceFuturesAccountInfo = {
+  totalWalletBalance: string;
+  totalMarginBalance: string;
+  totalUnrealizedProfit: string;
+  availableBalance: string;
+  totalPositionInitialMargin: string;
+  totalOpenOrderInitialMargin: string;
+  totalCrossWalletBalance: string;
+  totalCrossUnPnl: string;
+  maxWithdrawAmount: string;
+};
+
 type BinanceFuturesPositionRisk = {
   symbol: string;
   positionAmt: string;
@@ -162,4 +174,25 @@ export async function fetchFuturesOpenOrders(
     time: row.time ? new Date(row.time).toISOString() : null,
     updateTime: row.updateTime ? new Date(row.updateTime).toISOString() : null
   }));
+}
+
+export type AccountEquity = {
+  walletEquity: number;
+  marginBalance: number;
+  unrealizedProfit: number;
+  availableBalance: number;
+};
+
+export async function fetchFuturesAccountInfo(
+  client: BinanceSignedClient
+): Promise<AccountEquity> {
+  client.setTimestampOffsetMs(await getFuturesTimeOffsetMs(client.baseUrl));
+  const data = await client.get<BinanceFuturesAccountInfo>("/fapi/v2/account");
+
+  return {
+    walletEquity: Number(data.totalWalletBalance),
+    marginBalance: Number(data.totalMarginBalance),
+    unrealizedProfit: Number(data.totalUnrealizedProfit),
+    availableBalance: Number(data.availableBalance)
+  };
 }

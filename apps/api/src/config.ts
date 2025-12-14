@@ -1,4 +1,4 @@
-import type { RiskConstraints } from "@binance-advisor/shared";
+import type { RiskConstraints, RiskAppetite, UserTradingProfile } from "@binance-advisor/shared";
 
 function toNumber(value: string | undefined): number | null {
   if (value === undefined) return null;
@@ -74,4 +74,37 @@ export function getTelegramConfig(): { botToken: string; chatId: string } | null
 
   if (!botToken || !chatId) return null;
   return { botToken, chatId };
+}
+
+export function getUserTradingProfile(): UserTradingProfile {
+  const riskAppetite = (process.env.RISK_APPETITE ?? "medium") as RiskAppetite;
+  const maxLeverageNewSetups = toNumber(process.env.MAX_LEVERAGE_NEW_SETUPS) ?? 3;
+  const acceptableDrawdownPct = toNumber(process.env.ACCEPTABLE_DRAWDOWN_PCT) ?? 30;
+  const adviseOnTimeframes = toBool(process.env.ADVISE_ON_TIMEFRAMES, true);
+
+  return {
+    riskAppetite,
+    maxLeverageNewSetups,
+    acceptableDrawdownPct,
+    adviseOnTimeframes
+  };
+}
+
+export type EquityTargets = {
+  targetReturnPct: number;
+  stretchReturnPct: number[];
+};
+
+export function getEquityTargets(): EquityTargets {
+  const targetReturnPct = toNumber(process.env.TARGET_RETURN_EQUITY_PCT) ?? 10;
+  const stretchRaw = process.env.STRETCH_RETURN_EQUITY_PCT ?? "20,30";
+  const stretchReturnPct = stretchRaw
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n));
+
+  return {
+    targetReturnPct,
+    stretchReturnPct: stretchReturnPct.length > 0 ? stretchReturnPct : [20, 30]
+  };
 }
