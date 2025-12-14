@@ -1,12 +1,20 @@
 import type { FastifyPluginAsync } from "fastify";
 import type {
+  AccountEquityData,
   ApiErrorResponse,
   FuturesKlineInterval,
   FuturesPositionAnalysisRequest,
-  FuturesPositionAnalysisResponse
+  FuturesPositionAnalysisResponse,
+  MultiTimeframeIndicators
 } from "@binance-advisor/shared";
 
-import { getDefaultKlineInterval, getKlineLimit, getRiskConstraints, getUserTradingProfile } from "../config.js";
+import {
+  getDefaultKlineInterval,
+  getEquityTargets,
+  getKlineLimit,
+  getRiskConstraints,
+  getUserTradingProfile
+} from "../config.js";
 import { atr, rsi, sma } from "../domain/indicators/candles.js";
 import {
   computeDeterministicNotes,
@@ -17,10 +25,11 @@ import {
 import { BinanceHttpError } from "../services/binance/errors.js";
 import {
   createFuturesClient,
+  fetchFuturesAccountInfo,
   fetchFuturesOpenOrders,
   fetchFuturesPositionRisk
 } from "../services/binance/futures.js";
-import { fetchFuturesKlines } from "../services/binance/publicFutures.js";
+import { fetchFuturesKlines, fetchMultiTimeframeIndicators } from "../services/binance/publicFutures.js";
 import { runAdvisorProviders } from "../services/llm/aggregate.js";
 
 const ALLOWED_INTERVALS: FuturesKlineInterval[] = [
@@ -110,11 +119,16 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
     let position = null as FuturesPositionAnalysisResponse["position"];
     let openOrders: FuturesPositionAnalysisResponse["openOrders"] = [];
+    let walletEquity: number | undefined;
 
     try {
       const rows = await fetchFuturesPositionRisk(client);
       position = rows.find((p) => p.symbol === symbol && p.amount !== 0) ?? null;
       openOrders = await fetchFuturesOpenOrders(client, symbol);
+
+      // Fetch account equity for LLM context
+      const accountInfo = await fetchFuturesAccountInfo(client);
+      walletEquity = accountInfo.walletEquity;
     } catch (err) {
       if (err instanceof BinanceHttpError) {
         app.log.warn({ status: err.status, code: err.code }, "Binance upstream error");
@@ -150,12 +164,19 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
     }
 
     let indicators: FuturesPositionAnalysisResponse["indicators"] = null;
+    let multiTimeframeIndicators: MultiTimeframeIndicators | undefined;
+
     try {
-      const candles = await fetchFuturesKlines({
-        symbol,
-        interval,
-        limit: getKlineLimit()
-      });
+      // Fetch regular indicators and multi-timeframe in parallel
+      const [candles, mtfIndicators] = await Promise.all([
+        fetchFuturesKlines({
+          symbol,
+          interval,
+          limit: getKlineLimit()
+        }),
+        fetchMultiTimeframeIndicators({ symbol, limit: getKlineLimit() })
+      ]);
+
       const closes = candles.map((c) => c.close);
       indicators = {
         interval,
@@ -165,6 +186,8 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
         sma20: sma(closes, 20),
         sma50: sma(closes, 50)
       };
+
+      multiTimeframeIndicators = mtfIndicators;
     } catch (err) {
       app.log.info({ err }, "Unable to fetch klines/indicators");
       indicators = null;
@@ -209,6 +232,16 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
+    // Build equity targets for LLM input and response
+    const equityTargets = getEquityTargets();
+    const accountEquity: AccountEquityData | undefined = walletEquity !== undefined
+      ? {
+          wallet_equity: walletEquity,
+          target_return_equity_percent: equityTargets.targetReturnPct,
+          stretch_return_equity_percent: equityTargets.stretchReturnPct
+        }
+      : undefined;
+
     const llmProviders = await runAdvisorProviders({
       symbol,
       constraints,
@@ -222,7 +255,10 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
         suggestedTakeProfit,
         warnings,
         notes
-      }
+      },
+      // New fields for enhanced LLM analysis
+      account: accountEquity,
+      multi_timeframe_indicators: multiTimeframeIndicators
     });
 
     const response: FuturesPositionAnalysisResponse = {
@@ -232,6 +268,8 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       position,
       openOrders,
       indicators,
+      multiTimeframeIndicators,
+      accountEquity,
       deterministic: {
         suggestedStopLoss,
         suggestedTakeProfit,
