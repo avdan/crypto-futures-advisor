@@ -16,6 +16,27 @@ function formatNumber(value: number, digits = 4) {
   });
 }
 
+function formatPrice(value: number) {
+  if (!Number.isFinite(value)) return "-";
+  // Determine decimal places based on price magnitude
+  let digits: number;
+  if (value >= 1000) {
+    digits = 2;
+  } else if (value >= 1) {
+    digits = 4;
+  } else if (value >= 0.01) {
+    digits = 5;
+  } else if (value >= 0.0001) {
+    digits = 6;
+  } else {
+    digits = 8;
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: digits
+  });
+}
+
 function parseSymbols(text: string): string[] {
   return text
     .split(/[\n,]+/g)
@@ -118,17 +139,17 @@ export function SetupsView({ apiBaseUrl, apiOnline }: Props) {
             <div className="setupPriceLabel">ENTRY</div>
             <div className="setupPriceValue mono">
               {s.entryZone
-                ? `${formatNumber(s.entryZone[0], 2)} – ${formatNumber(s.entryZone[1], 2)}`
-                : formatNumber(s.entry, 2)}
+                ? `${formatPrice(s.entryZone[0])} – ${formatPrice(s.entryZone[1])}`
+                : formatPrice(s.entry)}
             </div>
           </div>
           <div className="setupPriceItem setupPriceSL">
             <div className="setupPriceLabel">STOP LOSS</div>
-            <div className="setupPriceValue mono">{formatNumber(s.stopLoss, 2)}</div>
+            <div className="setupPriceValue mono">{formatPrice(s.stopLoss)}</div>
           </div>
           <div className="setupPriceItem setupPriceTP">
             <div className="setupPriceLabel">TAKE PROFIT</div>
-            <div className="setupPriceValue mono">{formatNumber(s.takeProfit, 2)}</div>
+            <div className="setupPriceValue mono">{formatPrice(s.takeProfit)}</div>
           </div>
         </div>
 
