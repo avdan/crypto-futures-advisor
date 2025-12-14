@@ -110,6 +110,10 @@ export function SetupsView({ apiBaseUrl, apiOnline }: Props) {
         <td className="right mono">{formatNumber(s.stopLoss, 2)}</td>
         <td className="right mono">{formatNumber(s.takeProfit, 2)}</td>
         <td className="right mono">{s.rr ? formatNumber(s.rr, 2) : "-"}</td>
+        <td className="right mono">{s.sizing ? formatNumber(s.sizing.quantity, 4) : "-"}</td>
+        <td className="right mono pnlNeg">{s.sizing ? `$${formatNumber(s.sizing.riskUsd, 0)}` : "-"}</td>
+        <td className="right mono pnlPos">{s.sizing ? `$${formatNumber(s.sizing.rewardUsd, 0)}` : "-"}</td>
+        <td className="right mono">{s.sizing ? `${formatNumber(s.sizing.leverageRequired, 1)}x` : "-"}</td>
       </tr>
     );
   }
@@ -266,12 +270,16 @@ export function SetupsView({ apiBaseUrl, apiOnline }: Props) {
               <th className="right">SL</th>
               <th className="right">TP</th>
               <th className="right">R:R</th>
+              <th className="right">Qty</th>
+              <th className="right">Risk $</th>
+              <th className="right">Reward $</th>
+              <th className="right">Lev</th>
             </tr>
           </thead>
           <tbody>
             {topSetups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="emptyCell">
+                <td colSpan={13} className="emptyCell">
                   Run a scan to see setups.
                 </td>
               </tr>

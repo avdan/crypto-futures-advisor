@@ -275,6 +275,15 @@ export type SetupStrategy = "BREAKOUT_RETEST" | "TREND_PULLBACK" | "CONTINUATION
 
 export type SetupDirection = "LONG" | "SHORT";
 
+export type PositionSizing = {
+  quantity: number; // Token quantity to buy/sell
+  notionalUsd: number; // Position size in USD
+  riskUsd: number; // What you lose if SL hit
+  rewardUsd: number; // What you gain if TP hit
+  riskPct: number; // Risk as % of wallet equity
+  leverageRequired: number; // Effective leverage for this position
+};
+
 export type SetupCandidate = {
   symbol: string;
   timeframe: "15m" | "1h";
@@ -290,6 +299,8 @@ export type SetupCandidate = {
   reasons: string[];
   invalidation: string[];
   createdAt: string;
+  // Position sizing (optional - requires account equity)
+  sizing?: PositionSizing;
 };
 
 export type ScannerStatusResponse = {

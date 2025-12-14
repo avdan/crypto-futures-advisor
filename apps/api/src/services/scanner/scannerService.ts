@@ -4,10 +4,12 @@ import path from "node:path";
 import type { ScannerRunResponse, ScannerStatusResponse, SetupCandidate } from "@binance-advisor/shared";
 
 import { getKlineLimit, getRiskConstraints } from "../../config.js";
+import { calculatePositionSizing } from "../../domain/risk/positionSizing.js";
 import { runSetupScan } from "../../domain/scanner/runScan.js";
+import { createFuturesClient, fetchFuturesAccountInfo } from "../binance/futures.js";
 import { runSetupsSummaryProviders } from "../llm/aggregate.js";
-import type { WatchlistStore } from "../watchlist/store.js";
 import { resolveApiDataDir } from "../storage/paths.js";
+import type { WatchlistStore } from "../watchlist/store.js";
 
 type Logger = {
   info: (obj: unknown, msg?: string) => void;
@@ -119,6 +121,18 @@ export function createScannerService(params: {
       const constraints = getRiskConstraints();
       const klineLimit = getKlineLimit();
 
+      // Fetch account equity for position sizing (optional)
+      let walletEquity: number | null = null;
+      const client = createFuturesClient();
+      if (client) {
+        try {
+          const accountInfo = await fetchFuturesAccountInfo(client);
+          walletEquity = accountInfo.walletEquity;
+        } catch (err) {
+          params.logger.warn({ err }, "Failed to fetch account equity for position sizing");
+        }
+      }
+
       const { results, errors } = await runSetupScan({
         symbols: watchlist.symbols,
         constraints,
@@ -130,7 +144,26 @@ export function createScannerService(params: {
         }
       });
 
-      const top3: SetupCandidate[] = results.slice(0, 3);
+      // Calculate position sizing for each setup if we have wallet equity
+      const resultsWithSizing: SetupCandidate[] = results.map((setup) => {
+        if (walletEquity === null || walletEquity <= 0) {
+          return setup;
+        }
+
+        const sizing = calculatePositionSizing({
+          walletEquity,
+          riskPerTradePct: constraints.riskPerTradePct,
+          entry: setup.entry,
+          stopLoss: setup.stopLoss,
+          takeProfit: setup.takeProfit,
+          direction: setup.direction,
+          maxLeverage: constraints.maxLeverage
+        });
+
+        return sizing ? { ...setup, sizing } : setup;
+      });
+
+      const top3: SetupCandidate[] = resultsWithSizing.slice(0, 3);
       const llmProviders =
         top3.length > 0
           ? await runSetupsSummaryProviders({
@@ -145,7 +178,7 @@ export function createScannerService(params: {
       const response: ScannerRunResponse = {
         runAt,
         watchlist,
-        results,
+        results: resultsWithSizing,
         errors,
         llm: {
           providers: llmProviders
