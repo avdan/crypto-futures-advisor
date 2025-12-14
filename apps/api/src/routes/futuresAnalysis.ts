@@ -6,7 +6,7 @@ import type {
   FuturesPositionAnalysisResponse
 } from "@binance-advisor/shared";
 
-import { getDefaultKlineInterval, getKlineLimit, getRiskConstraints } from "../config.js";
+import { getDefaultKlineInterval, getKlineLimit, getRiskConstraints, getUserTradingProfile } from "../config.js";
 import { atr, rsi, sma } from "../domain/indicators/candles.js";
 import {
   computeDeterministicNotes,
@@ -77,6 +77,7 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
     const constraints = getRiskConstraints();
 
     const client = createFuturesClient();
+    const userProfile = getUserTradingProfile();
     if (!client) {
       const response: FuturesPositionAnalysisResponse = {
         fetchedAt: new Date().toISOString(),
@@ -95,6 +96,8 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
           providers: await runAdvisorProviders({
             symbol,
             constraints,
+            userProfile,
+            userContext: body.userContext ?? null,
             position: null,
             openOrders: [],
             indicators: null
@@ -134,6 +137,8 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
           providers: await runAdvisorProviders({
             symbol,
             constraints,
+            userProfile,
+            userContext: body.userContext ?? null,
             position: null,
             openOrders: [],
             indicators: null
@@ -207,6 +212,8 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
     const llmProviders = await runAdvisorProviders({
       symbol,
       constraints,
+      userProfile,
+      userContext: body.userContext ?? null,
       position,
       openOrders,
       indicators,

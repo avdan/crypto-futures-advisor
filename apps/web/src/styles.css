@@ -434,3 +434,32 @@ h1 {
 .summaryText {
   white-space: pre-wrap;
 }
+
+.userContextWrap {
+  margin: 12px 0 14px;
+}
+
+.userContextLabel {
+  display: block;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.userContextInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.userContextInput::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}

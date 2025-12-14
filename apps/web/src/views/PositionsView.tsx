@@ -59,6 +59,8 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
   const [planError, setPlanError] = useState<string | null>(null);
   const [plan, setPlan] = useState<CreateOrderPlanDraftResponse | null>(null);
 
+  const [userContext, setUserContext] = useState<string>("");
+
   const nonZeroOnly = true;
   const autoRefreshDefault = false;
   const [autoRefresh, setAutoRefresh] = useState(autoRefreshDefault);
@@ -129,7 +131,10 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
     setAnalysisLoading(true);
     setAnalysisError(null);
     try {
-      const res = await analyzeFuturesPosition(apiBaseUrl, { symbol: selectedSymbol });
+      const res = await analyzeFuturesPosition(apiBaseUrl, {
+        symbol: selectedSymbol,
+        userContext: userContext.trim() || undefined
+      });
       setAnalysis(res);
       setSelectedActionKeys({});
       setPlan(null);
@@ -140,7 +145,7 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
     } finally {
       setAnalysisLoading(false);
     }
-  }, [apiBaseUrl, selectedSymbol]);
+  }, [apiBaseUrl, selectedSymbol, userContext]);
 
   const selectedSelections = useMemo(() => {
     if (!analysis) return [];
@@ -304,6 +309,22 @@ export function PositionsView({ apiBaseUrl, apiOnline }: Props) {
 
       {selectedPosition?.updatedAt ? (
         <div className="hint mono">Position updated: {selectedPosition.updatedAt}</div>
+      ) : null}
+
+      {selectedSymbol ? (
+        <div className="userContextWrap">
+          <label className="userContextLabel" htmlFor="userContext">
+            Your notes (optional):
+          </label>
+          <textarea
+            id="userContext"
+            className="userContextInput mono"
+            placeholder="e.g. Looking to scale out at $100k resistance, watching for 4h close above SMA50..."
+            value={userContext}
+            onChange={(e) => setUserContext(e.target.value)}
+            rows={2}
+          />
+        </div>
       ) : null}
 
       {ordersError ? (
