@@ -6,10 +6,11 @@
     "packages/*"
   ],
   "scripts": {
+    "dev:all": "node scripts/dev-all.mjs",
     "dev:api": "npm -w apps/api run dev",
     "dev:web": "npm -w apps/web run dev",
-    "build": "npm -ws run build --if-present",
-    "typecheck": "npm -ws run typecheck --if-present"
+    "build": "npm --workspaces run build --if-present",
+    "typecheck": "npm --workspaces run typecheck --if-present"
   },
   "engines": {
     "node": ">=18.18.0"

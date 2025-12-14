@@ -15,7 +15,7 @@ function toSortedSearchParams(params: Record<string, QueryValue>): URLSearchPara
   const entries = Object.entries(params)
     .filter(([, value]) => value !== undefined)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => [key, String(value)] as const);
+    .map(([key, value]) => [key, String(value)] as [string, string]);
 
   return new URLSearchParams(entries);
 }

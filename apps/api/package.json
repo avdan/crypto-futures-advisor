@@ -1,5 +1,6 @@
 {
   "name": "@binance-advisor/api",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,9 +11,11 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
-    "@binance-advisor/shared": "workspace:*",
+    "@binance-advisor/shared": "0.0.0",
     "dotenv": "^16.4.0",
-    "fastify": "^5.0.0"
+    "fastify": "^5.0.0",
+    "openai": "^4.104.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.0",
