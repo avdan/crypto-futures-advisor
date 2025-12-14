@@ -1,4 +1,4 @@
-import type { UserTradingProfile } from "@binance-advisor/shared";
+import type { CalculatedEquityTargets, UserTradingProfile } from "@binance-advisor/shared";
 
 export type LlmInputWithProfile = {
   userProfile?: UserTradingProfile;
@@ -8,6 +8,7 @@ export type LlmInputWithProfile = {
     target_return_equity_percent: number;
     stretch_return_equity_percent: number[];
   };
+  calculated_equity_targets?: CalculatedEquityTargets;
   multi_timeframe_indicators?: unknown;
   [key: string]: unknown;
 };
@@ -16,6 +17,7 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
   const profile = input.userProfile;
   const userContext = input.userContext;
   const account = input.account;
+  const equityTargets = input.calculated_equity_targets;
   const hasMultiTimeframe = Boolean(input.multi_timeframe_indicators);
 
   const lines = [
@@ -57,14 +59,30 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
     lines.push("");
   }
 
-  if (account) {
-    lines.push("## EQUITY POTENTIAL CALCULATION");
+  if (equityTargets) {
+    lines.push("## EQUITY TARGETS (PRE-CALCULATED)");
+    lines.push(`- Position: ${equityTargets.direction} from $${equityTargets.entry_price.toFixed(2)}`);
+    lines.push(`- Wallet equity: $${equityTargets.wallet_equity.toFixed(2)}`);
+    lines.push("");
+    lines.push(`### Minimum Target (${equityTargets.minimum_target.percent}% equity return)`);
+    lines.push(`- Profit required: $${equityTargets.minimum_target.profit_required.toFixed(2)}`);
+    lines.push(`- Required price: $${equityTargets.minimum_target.required_price.toFixed(2)}`);
+    lines.push("");
+    lines.push("### Stretch Targets");
+    for (const target of equityTargets.stretch_targets) {
+      lines.push(`- ${target.percent}% equity return: $${target.required_price.toFixed(2)} (profit: $${target.profit_required.toFixed(2)})`);
+    }
+    lines.push("");
+    lines.push("TASK: Assess if each target price is REACHABLE based on current structure.");
+    lines.push("- Set reachable=true if structure supports the move, false if invalidated or unrealistic");
+    lines.push("- Use the pre-calculated required_price values in your equity_potential output");
+    lines.push("");
+  } else if (account) {
+    lines.push("## EQUITY CONTEXT");
     lines.push(`- Current wallet equity: $${account.wallet_equity.toFixed(2)}`);
-    lines.push(`- Minimum target: ${account.target_return_equity_percent}% equity return`);
+    lines.push(`- Target: ${account.target_return_equity_percent}% equity return`);
     lines.push(`- Stretch targets: ${account.stretch_return_equity_percent.join("%, ")}% equity returns`);
-    lines.push("- Calculate if each target is reachable from the current position");
-    lines.push("- Set required_price_level to the price needed to hit each target");
-    lines.push("- If in profit, evaluate if the remaining move can still reasonably reach targets");
+    lines.push("- No position data available to calculate exact price levels");
     lines.push("");
   }
 

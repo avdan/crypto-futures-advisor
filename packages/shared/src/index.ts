@@ -222,6 +222,23 @@ export type AccountEquityData = {
   stretch_return_equity_percent: number[];
 };
 
+// Calculated equity target with price level
+export type CalculatedEquityTarget = {
+  percent: number;
+  profit_required: number;
+  required_price: number;
+};
+
+// Backend-calculated equity targets (passed to LLM for reachability assessment)
+export type CalculatedEquityTargets = {
+  direction: "LONG" | "SHORT";
+  entry_price: number;
+  position_qty: number;
+  wallet_equity: number;
+  minimum_target: CalculatedEquityTarget;
+  stretch_targets: CalculatedEquityTarget[];
+};
+
 // Account margin info for display
 export type AccountMarginInfo = {
   marginRatio: number; // Maintenance margin / margin balance * 100
@@ -265,6 +282,8 @@ export type FuturesPositionAnalysisResponse = {
   accountEquity?: AccountEquityData;
   // NEW: Account margin info (for display)
   accountMarginInfo?: AccountMarginInfo;
+  // Backend-calculated equity targets (for LLM reachability assessment)
+  calculatedEquityTargets?: CalculatedEquityTargets;
   deterministic: {
     suggestedStopLoss: number | null;
     suggestedTakeProfit: number | null;

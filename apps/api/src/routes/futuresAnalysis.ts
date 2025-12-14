@@ -3,6 +3,7 @@ import type {
   AccountEquityData,
   AccountMarginInfo,
   ApiErrorResponse,
+  CalculatedEquityTargets,
   FuturesKlineInterval,
   FuturesPositionAnalysisRequest,
   FuturesPositionAnalysisResponse,
@@ -21,6 +22,7 @@ import {
 import { atr, rsi, sma } from "../domain/indicators/candles.js";
 import {
   computeDeterministicNotes,
+  computeEquityTargets,
   computeSuggestedStopFromAtr,
   computeTakeProfitFromTargetRoi,
   positionDirection
@@ -275,6 +277,17 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
         }
       : undefined;
 
+    // Calculate required price levels for equity targets
+    const calculatedEquityTargets: CalculatedEquityTargets | undefined =
+      position && accountInfo
+        ? computeEquityTargets({
+            position,
+            walletEquity: accountInfo.walletEquity,
+            targetReturnPct: equityTargets.targetReturnPct,
+            stretchReturnPct: equityTargets.stretchReturnPct
+          }) ?? undefined
+        : undefined;
+
     const llmProviders = await runAdvisorProviders({
       symbol,
       constraints,
@@ -291,7 +304,9 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       },
       // New fields for enhanced LLM analysis
       account: accountEquity,
-      multi_timeframe_indicators: multiTimeframeIndicators
+      multi_timeframe_indicators: multiTimeframeIndicators,
+      // Backend-calculated equity targets for LLM to assess reachability
+      calculated_equity_targets: calculatedEquityTargets
     });
 
     const response: FuturesPositionAnalysisResponse = {
@@ -304,6 +319,7 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       multiTimeframeIndicators,
       accountEquity,
       accountMarginInfo,
+      calculatedEquityTargets,
       deterministic: {
         suggestedStopLoss,
         suggestedTakeProfit,

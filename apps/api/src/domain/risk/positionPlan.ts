@@ -1,4 +1,9 @@
-import type { FuturesPosition, RiskConstraints } from "@binance-advisor/shared";
+import type {
+  CalculatedEquityTarget,
+  CalculatedEquityTargets,
+  FuturesPosition,
+  RiskConstraints
+} from "@binance-advisor/shared";
 
 export type PositionDirection = "LONG" | "SHORT" | "FLAT";
 
@@ -102,3 +107,49 @@ export function computeDeterministicNotes(params: {
   return { warnings, notes };
 }
 
+/**
+ * Calculate the required price levels to achieve equity return targets.
+ *
+ * Formula:
+ * - profit_required = wallet_equity × (target_percent / 100)
+ * - price_move = profit_required / abs(position_qty)
+ * - LONG: required_price = entry_price + price_move
+ * - SHORT: required_price = entry_price - price_move
+ */
+export function computeEquityTargets(params: {
+  position: FuturesPosition;
+  walletEquity: number;
+  targetReturnPct: number;
+  stretchReturnPct: number[];
+}): CalculatedEquityTargets | null {
+  const { position, walletEquity, targetReturnPct, stretchReturnPct } = params;
+
+  const dir = positionDirection(position);
+  if (dir === "FLAT") return null;
+  if (walletEquity <= 0) return null;
+  if (position.amount === 0) return null;
+
+  const absQty = Math.abs(position.amount);
+  const entry = position.entryPrice;
+
+  function calcTarget(percent: number): CalculatedEquityTarget {
+    const profitRequired = walletEquity * (percent / 100);
+    const priceMove = profitRequired / absQty;
+    const requiredPrice = dir === "LONG" ? entry + priceMove : entry - priceMove;
+
+    return {
+      percent,
+      profit_required: profitRequired,
+      required_price: requiredPrice
+    };
+  }
+
+  return {
+    direction: dir,
+    entry_price: entry,
+    position_qty: position.amount,
+    wallet_equity: walletEquity,
+    minimum_target: calcTarget(targetReturnPct),
+    stretch_targets: stretchReturnPct.map(calcTarget)
+  };
+}
