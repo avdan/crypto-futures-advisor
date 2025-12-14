@@ -255,8 +255,8 @@ export type BtcVolatility = "high" | "normal" | "low";
 export type BtcDriverFlag = "btc_driving" | "alt_idiosyncratic";
 
 export type BtcKeyLevels = {
-  support: [number, number];
-  resistance: [number, number];
+  support: number[];
+  resistance: number[];
 };
 
 export type BtcContext = {

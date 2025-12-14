@@ -17,10 +17,43 @@ const c = {
   green: "\x1b[32m"
 };
 
+type CandleArray = Array<unknown>;
+type CandleData = Record<string, CandleArray | undefined>;
+
+function summarizeCandleData(data: CandleData | undefined): Record<string, number> | undefined {
+  if (!data) return undefined;
+  const summary: Record<string, number> = {};
+  for (const [tf, candles] of Object.entries(data)) {
+    if (Array.isArray(candles)) {
+      summary[tf] = candles.length;
+    }
+  }
+  return Object.keys(summary).length > 0 ? summary : undefined;
+}
+
+function summarizeInputForLogging(input: unknown): unknown {
+  if (!input || typeof input !== "object") return input;
+  const obj = input as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === "candles" || key === "btc_candles" || key === "altbtc_candles") {
+      const summary = summarizeCandleData(value as CandleData | undefined);
+      if (summary) {
+        result[key] = { _summary: summary };
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 function logLlmStart(provider: "openai" | "anthropic", context: string, model: string | null, input: unknown) {
   const color = provider === "openai" ? c.openai : c.anthropic;
   const label = provider === "openai" ? "OpenAI" : "Claude";
-  const inputStr = JSON.stringify(input, null, 2);
+  const summarized = summarizeInputForLogging(input);
+  const inputStr = JSON.stringify(summarized, null, 2);
   console.log(`${color}[${label}]${c.reset} Starting ${context}...`);
   console.log(`${c.dim}  Model: ${model ?? "unknown"}${c.reset}`);
   console.log(`${c.dim}  Input (${inputStr.length} chars):${c.reset}`);

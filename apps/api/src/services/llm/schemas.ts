@@ -81,10 +81,10 @@ const confidenceDriverSchema = z.object({
   weight: z.number().int().min(0).max(100)
 });
 
-// v3: BTC context schema
+// v3: BTC context schema (arrays instead of tuples for OpenAI compatibility)
 const btcKeyLevelsSchema = z.object({
-  support: z.tuple([z.number(), z.number()]),
-  resistance: z.tuple([z.number(), z.number()])
+  support: z.array(z.number()),
+  resistance: z.array(z.number())
 });
 
 const btcContextSchema = z.object({
@@ -310,15 +310,11 @@ export const advisorRecommendationJsonSchema = {
             properties: {
               support: {
                 type: "array",
-                items: { type: "number" },
-                minItems: 2,
-                maxItems: 2
+                items: { type: "number" }
               },
               resistance: {
                 type: "array",
-                items: { type: "number" },
-                minItems: 2,
-                maxItems: 2
+                items: { type: "number" }
               }
             },
             required: ["support", "resistance"]
