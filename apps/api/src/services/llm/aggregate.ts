@@ -7,6 +7,36 @@ import {
   generateClaudeSetupsSummary
 } from "./providers/anthropic.js";
 
+// ANSI colors for terminal logging
+const c = {
+  openai: "\x1b[33m",     // Yellow
+  anthropic: "\x1b[35m",  // Magenta
+  reset: "\x1b[0m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m"
+};
+
+function logLlmStart(provider: "openai" | "anthropic", context: string, model: string | null, inputSize: number) {
+  const color = provider === "openai" ? c.openai : c.anthropic;
+  const label = provider === "openai" ? "OpenAI" : "Claude";
+  console.log(`${color}[${label}]${c.reset} Starting ${context}...`);
+  console.log(`${c.dim}  Model: ${model ?? "unknown"}${c.reset}`);
+  console.log(`${c.dim}  Input: ${inputSize} chars${c.reset}`);
+}
+
+function logLlmEnd(provider: "openai" | "anthropic", context: string, latencyMs: number) {
+  const color = provider === "openai" ? c.openai : c.anthropic;
+  const label = provider === "openai" ? "OpenAI" : "Claude";
+  console.log(`${color}[${label}]${c.reset} ${c.green}Completed${c.reset} ${context} in ${latencyMs}ms`);
+}
+
+function logLlmError(provider: "openai" | "anthropic", context: string, error: string, latencyMs: number) {
+  const color = provider === "openai" ? c.openai : c.anthropic;
+  const label = provider === "openai" ? "OpenAI" : "Claude";
+  console.log(`${color}[${label}]${c.reset} ${c.red}ERROR${c.reset} ${context} after ${latencyMs}ms: ${error}`);
+}
+
 function toErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   return "Unknown error";
@@ -17,6 +47,7 @@ export async function runAdvisorProviders(input: unknown): Promise<
 > {
   const openAi = getOpenAiConfig();
   const anthropic = getAnthropicConfig();
+  const inputSize = JSON.stringify(input).length;
 
   const tasks = [
     {
@@ -63,26 +94,35 @@ export async function runAdvisorProviders(input: unknown): Promise<
         return disabled;
       }
 
+      logLlmStart(t.provider, "advisor", t.model, inputSize);
       const startedAt = Date.now();
+
       try {
         const output = (await t.run()) as AdvisorRecommendation | null;
+        const latencyMs = Date.now() - startedAt;
+        logLlmEnd(t.provider, "advisor", latencyMs);
+
         const ok: LlmProviderResult<AdvisorRecommendation> = {
           provider: t.provider,
           enabled: true,
           model: t.model,
-          latencyMs: Date.now() - startedAt,
+          latencyMs,
           output,
           error: null
         };
         return ok;
       } catch (err) {
+        const latencyMs = Date.now() - startedAt;
+        const errorMsg = toErrorMessage(err);
+        logLlmError(t.provider, "advisor", errorMsg, latencyMs);
+
         const failed: LlmProviderResult<AdvisorRecommendation> = {
           provider: t.provider,
           enabled: true,
           model: t.model,
-          latencyMs: Date.now() - startedAt,
+          latencyMs,
           output: null,
-          error: toErrorMessage(err)
+          error: errorMsg
         };
         return failed;
       }
@@ -95,6 +135,7 @@ export async function runAdvisorProviders(input: unknown): Promise<
 export async function runSetupsSummaryProviders(input: unknown): Promise<Array<LlmProviderResult<string>>> {
   const openAi = getOpenAiConfig();
   const anthropic = getAnthropicConfig();
+  const inputSize = JSON.stringify(input).length;
 
   const tasks = [
     {
@@ -141,26 +182,35 @@ export async function runSetupsSummaryProviders(input: unknown): Promise<Array<L
         return disabled;
       }
 
+      logLlmStart(t.provider, "setups-summary", t.model, inputSize);
       const startedAt = Date.now();
+
       try {
         const output = (await t.run()) as string | null;
+        const latencyMs = Date.now() - startedAt;
+        logLlmEnd(t.provider, "setups-summary", latencyMs);
+
         const ok: LlmProviderResult<string> = {
           provider: t.provider,
           enabled: true,
           model: t.model,
-          latencyMs: Date.now() - startedAt,
+          latencyMs,
           output,
           error: null
         };
         return ok;
       } catch (err) {
+        const latencyMs = Date.now() - startedAt;
+        const errorMsg = toErrorMessage(err);
+        logLlmError(t.provider, "setups-summary", errorMsg, latencyMs);
+
         const failed: LlmProviderResult<string> = {
           provider: t.provider,
           enabled: true,
           model: t.model,
-          latencyMs: Date.now() - startedAt,
+          latencyMs,
           output: null,
-          error: toErrorMessage(err)
+          error: errorMsg
         };
         return failed;
       }

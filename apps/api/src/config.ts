@@ -31,7 +31,7 @@ export function getOpenAiConfig(): {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o";
+  const model = process.env.OPENAI_MODEL ?? "gpt-5.2";
 
   const maxCompletionTokensRaw = toNumber(process.env.OPENAI_MAX_COMPLETION_TOKENS);
   const maxCompletionTokens =
