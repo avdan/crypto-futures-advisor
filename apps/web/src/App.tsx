@@ -5,10 +5,11 @@ import { fetchHealthz } from "./api/health";
 import { DashboardView } from "./views/DashboardView";
 import { PositionsView } from "./views/PositionsView";
 import { SetupsView } from "./views/SetupsView";
+import { AlertsView } from "./views/AlertsView";
 import "./styles.css";
 
 type UiStatus = "checking" | "online" | "offline";
-type Tab = "dashboard" | "positions" | "setups";
+type Tab = "dashboard" | "positions" | "setups" | "alerts";
 
 export function App() {
   const apiBaseUrl = useMemo(
@@ -97,6 +98,12 @@ export function App() {
         >
           Setups
         </button>
+        <button
+          className={`tab ${tab === "alerts" ? "tabActive" : ""}`}
+          onClick={() => setTab("alerts")}
+        >
+          Alerts
+        </button>
       </nav>
 
       {tab === "dashboard" ? (
@@ -108,8 +115,10 @@ export function App() {
         />
       ) : tab === "positions" ? (
         <PositionsView apiBaseUrl={apiBaseUrl} apiOnline={uiStatus === "online"} />
-      ) : (
+      ) : tab === "setups" ? (
         <SetupsView apiBaseUrl={apiBaseUrl} apiOnline={uiStatus === "online"} />
+      ) : (
+        <AlertsView apiBaseUrl={apiBaseUrl} apiOnline={uiStatus === "online"} />
       )}
     </div>
   );
