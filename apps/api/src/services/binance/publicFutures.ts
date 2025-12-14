@@ -1,4 +1,10 @@
-import type { FuturesKlineInterval, TimeframeIndicatorSet, MultiTimeframeIndicators } from "@binance-advisor/shared";
+import type {
+  FuturesKlineInterval,
+  LlmCandle,
+  MultiTimeframeIndicators,
+  RawCandleData,
+  TimeframeIndicatorSet
+} from "@binance-advisor/shared";
 
 import { atr, rsi, sma, type Candle } from "../../domain/indicators/candles.js";
 
@@ -84,3 +90,43 @@ export async function fetchMultiTimeframeIndicators(params: {
   return { m15, h1, h4, d1 };
 }
 
+// Candle limits per timeframe for LLM input (optimized for token usage)
+const RAW_CANDLE_LIMITS = {
+  m15: 50,
+  h1: 40,
+  h4: 25,
+  d1: 15
+} as const;
+
+async function fetchRawCandlesForTimeframe(
+  symbol: string,
+  interval: FuturesKlineInterval,
+  limit: number
+): Promise<LlmCandle[]> {
+  try {
+    const candles = await fetchFuturesKlines({ symbol, interval, limit });
+    return candles.map((c) => ({
+      t: c.openTime,
+      o: c.open,
+      h: c.high,
+      l: c.low,
+      c: c.close,
+      v: c.volume
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMultiTimeframeCandles(params: {
+  symbol: string;
+}): Promise<RawCandleData> {
+  const [m15, h1, h4, d1] = await Promise.all([
+    fetchRawCandlesForTimeframe(params.symbol, "15m", RAW_CANDLE_LIMITS.m15),
+    fetchRawCandlesForTimeframe(params.symbol, "1h", RAW_CANDLE_LIMITS.h1),
+    fetchRawCandlesForTimeframe(params.symbol, "4h", RAW_CANDLE_LIMITS.h4),
+    fetchRawCandlesForTimeframe(params.symbol, "1d", RAW_CANDLE_LIMITS.d1)
+  ]);
+
+  return { m15, h1, h4, d1 };
+}

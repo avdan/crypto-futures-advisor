@@ -67,16 +67,23 @@ const managementGuidanceSchema = z.object({
   rationale: z.string()
 });
 
+// v2: Confidence driver schema
+const confidenceDriverSchema = z.object({
+  factor: z.string(),
+  impact: z.enum(["positive", "negative", "neutral"]),
+  weight: z.number().int().min(0).max(100)
+});
+
 export const advisorRecommendationSchema = z.object({
   // EXISTING required fields
   summary: z.string(),
-  confidence: z.number().min(0).max(1),
+  confidence: z.number().int().min(0).max(100), // v2: 0-100 integer scale
   actions: z.array(advisorActionSchema),
   invalidation: z.array(z.string()),
   risks: z.array(z.string()),
   assumptions: z.array(z.string()),
 
-  // NEW optional fields (nullable for OpenAI structured outputs compatibility)
+  // Enhanced output fields (nullable for OpenAI structured outputs compatibility)
   trade_quality: tradeQualitySchema.nullable(),
   position_status: z.enum(positionStatuses).nullable(),
   higher_timeframe_bias: higherTimeframeBiasSchema.nullable(),
@@ -85,7 +92,11 @@ export const advisorRecommendationSchema = z.object({
   scenarios: z.array(scenarioSchema).nullable(),
   equity_potential: equityPotentialSchema.nullable(),
   management_guidance: managementGuidanceSchema.nullable(),
-  verdict: z.string().nullable()
+  verdict: z.string().nullable(),
+
+  // v2: Confidence explanation fields
+  what_would_change_mind: z.array(z.string()).nullable(),
+  drivers: z.array(confidenceDriverSchema).nullable()
 });
 
 export const setupsSummarySchema = z.object({
@@ -120,7 +131,7 @@ export const advisorRecommendationJsonSchema = {
     properties: {
       // EXISTING required fields
       summary: { type: "string" },
-      confidence: { type: "number", minimum: 0, maximum: 1 },
+      confidence: { type: "integer", minimum: 0, maximum: 100 }, // v2: 0-100 integer
       actions: {
         type: "array",
         items: {
@@ -223,7 +234,26 @@ export const advisorRecommendationJsonSchema = {
         },
         required: ["recommended_action", "rationale"]
       },
-      verdict: { type: "string" }
+      verdict: { type: "string" },
+
+      // v2: Confidence explanation fields
+      what_would_change_mind: {
+        type: "array",
+        items: { type: "string" }
+      },
+      drivers: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            factor: { type: "string" },
+            impact: { type: "string", enum: ["positive", "negative", "neutral"] },
+            weight: { type: "integer", minimum: 0, maximum: 100 }
+          },
+          required: ["factor", "impact", "weight"]
+        }
+      }
     },
     required: ["summary", "confidence", "actions", "invalidation", "risks", "assumptions"]
   }

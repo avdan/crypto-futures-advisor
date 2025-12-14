@@ -1,4 +1,4 @@
-import type { CalculatedEquityTargets, UserTradingProfile } from "@binance-advisor/shared";
+import type { CalculatedEquityTargets, RawCandleData, UserTradingProfile } from "@binance-advisor/shared";
 
 export type LlmInputWithProfile = {
   userProfile?: UserTradingProfile;
@@ -10,6 +10,7 @@ export type LlmInputWithProfile = {
   };
   calculated_equity_targets?: CalculatedEquityTargets;
   multi_timeframe_indicators?: unknown;
+  candles?: RawCandleData;
   [key: string]: unknown;
 };
 
@@ -19,6 +20,12 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
   const account = input.account;
   const equityTargets = input.calculated_equity_targets;
   const hasMultiTimeframe = Boolean(input.multi_timeframe_indicators);
+  const hasCandles = input.candles && (
+    (input.candles.m15?.length ?? 0) > 0 ||
+    (input.candles.h1?.length ?? 0) > 0 ||
+    (input.candles.h4?.length ?? 0) > 0 ||
+    (input.candles.d1?.length ?? 0) > 0
+  );
 
   const lines = [
     "You are a professional discretionary trader and market structure analyst.",
@@ -36,6 +43,25 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
     "7. Green candles after dumps are NOT bullish unless key levels are reclaimed",
     "8. A losing position can still be VALID if structure holds",
     "",
+    "## CONFIDENCE SCORING (0-100 SCALE)",
+    "Provide a confidence score from 0-100:",
+    "- 80-100: Very High - Strong multi-timeframe alignment, clear structure, high conviction",
+    "- 60-79: High - Good structure alignment with minor concerns",
+    "- 40-59: Moderate - Mixed signals, some structural ambiguity",
+    "- 20-39: Low - Conflicting signals, structure unclear",
+    "- 0-19: Very Low - High uncertainty, structure broken or undeterminable",
+    "",
+    "Always provide 'what_would_change_mind' (1-3 conditions that would flip your view)",
+    "Always provide 'drivers' array explaining what factors contribute to your confidence score",
+    "",
+    "## ANTI-PANIC RULES",
+    "1. A 1-2% move against the position is NOT cause for alarm unless structure breaks",
+    "2. Red candles after green runs are normal pullbacks, not reversals, unless key levels break",
+    "3. Weekend moves have 50% lower weight in confidence scoring",
+    "4. Liquidation wicks that recover immediately are BULLISH for the prevailing trend",
+    "5. Do NOT recommend closing profitable positions just because they are profitable",
+    "6. Drawdown from peak is NOT the same as a broken trade thesis",
+    "",
     "## ANALYSIS RULES",
     "1. Start analysis from the highest timeframe available and move downward",
     "2. Ignore 1m and 5m charts unless explicitly requested",
@@ -50,6 +76,23 @@ export function buildAdvisorSystemPrompt(input: LlmInputWithProfile): string {
     "If the answer is NO, state: \"This move is noise within the existing structure.\"",
     ""
   ];
+
+  if (hasCandles) {
+    lines.push("## RAW CANDLE DATA PROVIDED");
+    lines.push("You have access to raw OHLCV candles across 4 timeframes in the input:");
+    lines.push("- candles.d1: Daily candles (15 most recent) - PRIMARY for trend direction");
+    lines.push("- candles.h4: 4-hour candles (25 most recent) - for swing structure");
+    lines.push("- candles.h1: 1-hour candles (40 most recent) - for intraday structure");
+    lines.push("- candles.m15: 15-minute candles (50 most recent) - for entry/exit timing");
+    lines.push("");
+    lines.push("Each candle: { t: timestamp, o: open, h: high, l: low, c: close, v: volume }");
+    lines.push("Use this raw data to identify:");
+    lines.push("- Key support/resistance levels (swing highs/lows)");
+    lines.push("- Volume patterns (accumulation/distribution)");
+    lines.push("- Candle patterns (engulfing, doji, hammer, etc.)");
+    lines.push("- Trend structure (higher highs/lows or lower highs/lows)");
+    lines.push("");
+  }
 
   if (hasMultiTimeframe) {
     lines.push("## MULTI-TIMEFRAME ANALYSIS");

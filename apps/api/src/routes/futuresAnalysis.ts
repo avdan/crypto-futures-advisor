@@ -7,7 +7,8 @@ import type {
   FuturesKlineInterval,
   FuturesPositionAnalysisRequest,
   FuturesPositionAnalysisResponse,
-  MultiTimeframeIndicators
+  MultiTimeframeIndicators,
+  RawCandleData
 } from "@binance-advisor/shared";
 
 import type { AccountEquity } from "../services/binance/futures.js";
@@ -34,7 +35,11 @@ import {
   fetchFuturesOpenOrders,
   fetchFuturesPositionRisk
 } from "../services/binance/futures.js";
-import { fetchFuturesKlines, fetchMultiTimeframeIndicators } from "../services/binance/publicFutures.js";
+import {
+  fetchFuturesKlines,
+  fetchMultiTimeframeCandles,
+  fetchMultiTimeframeIndicators
+} from "../services/binance/publicFutures.js";
 import { runAdvisorProviders } from "../services/llm/aggregate.js";
 
 const ALLOWED_INTERVALS: FuturesKlineInterval[] = [
@@ -182,16 +187,18 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
 
     let indicators: FuturesPositionAnalysisResponse["indicators"] = null;
     let multiTimeframeIndicators: MultiTimeframeIndicators | undefined;
+    let rawCandles: RawCandleData | undefined;
 
     try {
-      // Fetch regular indicators and multi-timeframe in parallel
-      const [candles, mtfIndicators] = await Promise.all([
+      // Fetch regular indicators, multi-timeframe, and raw candles in parallel
+      const [candles, mtfIndicators, mtfCandles] = await Promise.all([
         fetchFuturesKlines({
           symbol,
           interval,
           limit: getKlineLimit()
         }),
-        fetchMultiTimeframeIndicators({ symbol, limit: getKlineLimit() })
+        fetchMultiTimeframeIndicators({ symbol, limit: getKlineLimit() }),
+        fetchMultiTimeframeCandles({ symbol })
       ]);
 
       const closes = candles.map((c) => c.close);
@@ -205,6 +212,7 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       };
 
       multiTimeframeIndicators = mtfIndicators;
+      rawCandles = mtfCandles;
     } catch (err) {
       app.log.info({ err }, "Unable to fetch klines/indicators");
       indicators = null;
@@ -306,7 +314,9 @@ export const futuresAnalysisRoutes: FastifyPluginAsync = async (app) => {
       account: accountEquity,
       multi_timeframe_indicators: multiTimeframeIndicators,
       // Backend-calculated equity targets for LLM to assess reachability
-      calculated_equity_targets: calculatedEquityTargets
+      calculated_equity_targets: calculatedEquityTargets,
+      // Raw OHLCV candles for LLM price action analysis
+      candles: rawCandles
     });
 
     const response: FuturesPositionAnalysisResponse = {

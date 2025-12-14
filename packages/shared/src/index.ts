@@ -180,13 +180,13 @@ export type ManagementGuidance = {
 export type AdvisorRecommendation = {
   // EXISTING (keep for backward compat)
   summary: string;
-  confidence: number; // 0..1
+  confidence: number; // 0-100 integer scale
   actions: AdvisorAction[];
   invalidation: string[];
   risks: string[];
   assumptions: string[];
 
-  // NEW: Enhanced output fields (nullable for OpenAI structured outputs)
+  // Enhanced output fields (nullable for OpenAI structured outputs)
   trade_quality: TradeQuality | null;
   position_status: PositionStatus | null;
   higher_timeframe_bias: HigherTimeframeBias | null;
@@ -196,6 +196,10 @@ export type AdvisorRecommendation = {
   equity_potential: EquityPotential | null;
   management_guidance: ManagementGuidance | null;
   verdict: string | null;
+
+  // v2: Confidence explanation fields
+  what_would_change_mind: string[] | null;
+  drivers: ConfidenceDriver[] | null;
 };
 
 // NEW: Multi-timeframe indicator types
@@ -213,6 +217,31 @@ export type MultiTimeframeIndicators = {
   h1: TimeframeIndicatorSet | null;
   h4: TimeframeIndicatorSet | null;
   d1: TimeframeIndicatorSet | null;
+};
+
+// Compact candle format for LLM input
+export type LlmCandle = {
+  t: number;  // timestamp (openTime)
+  o: number;  // open
+  h: number;  // high
+  l: number;  // low
+  c: number;  // close
+  v: number;  // volume
+};
+
+// Raw candle data per timeframe for LLM analysis
+export type RawCandleData = {
+  m15: LlmCandle[];
+  h1: LlmCandle[];
+  h4: LlmCandle[];
+  d1: LlmCandle[];
+};
+
+// Confidence driver explaining score contribution
+export type ConfidenceDriver = {
+  factor: string;
+  impact: "positive" | "negative" | "neutral";
+  weight: number;  // 0-100
 };
 
 // NEW: Account equity types
