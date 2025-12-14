@@ -134,6 +134,7 @@ export async function generateAdvisorRecommendation(params: {
     response = await client.responses.parse({
       model: params.model,
       max_output_tokens: params.maxCompletionTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+      reasoning: { effort: "medium" },
       instructions,
       input: JSON.stringify(params.input),
       text: {
@@ -184,6 +185,7 @@ export async function generateSetupsSummary(params: {
     response = await client.responses.parse({
       model: params.model,
       max_output_tokens: params.maxCompletionTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+      reasoning: { effort: "low" },
       instructions,
       input: JSON.stringify(params.input),
       text: {
