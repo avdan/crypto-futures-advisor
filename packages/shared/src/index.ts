@@ -186,16 +186,16 @@ export type AdvisorRecommendation = {
   risks: string[];
   assumptions: string[];
 
-  // NEW: Enhanced output fields (all optional for backward compat)
-  trade_quality?: TradeQuality;
-  position_status?: PositionStatus;
-  higher_timeframe_bias?: HigherTimeframeBias;
-  lower_timeframe_behavior?: LowerTimeframeBehavior;
-  key_levels?: KeyLevels;
-  scenarios?: ProbabilityScenario[];
-  equity_potential?: EquityPotential;
-  management_guidance?: ManagementGuidance;
-  verdict?: string;
+  // NEW: Enhanced output fields (nullable for OpenAI structured outputs)
+  trade_quality: TradeQuality | null;
+  position_status: PositionStatus | null;
+  higher_timeframe_bias: HigherTimeframeBias | null;
+  lower_timeframe_behavior: LowerTimeframeBehavior | null;
+  key_levels: KeyLevels | null;
+  scenarios: ProbabilityScenario[] | null;
+  equity_potential: EquityPotential | null;
+  management_guidance: ManagementGuidance | null;
+  verdict: string | null;
 };
 
 // NEW: Multi-timeframe indicator types

@@ -76,16 +76,16 @@ export const advisorRecommendationSchema = z.object({
   risks: z.array(z.string()),
   assumptions: z.array(z.string()),
 
-  // NEW optional fields
-  trade_quality: tradeQualitySchema.optional(),
-  position_status: z.enum(positionStatuses).optional(),
-  higher_timeframe_bias: higherTimeframeBiasSchema.optional(),
-  lower_timeframe_behavior: lowerTimeframeBehaviorSchema.optional(),
-  key_levels: keyLevelsSchema.optional(),
-  scenarios: z.array(scenarioSchema).optional(),
-  equity_potential: equityPotentialSchema.optional(),
-  management_guidance: managementGuidanceSchema.optional(),
-  verdict: z.string().optional()
+  // NEW optional fields (nullable for OpenAI structured outputs compatibility)
+  trade_quality: tradeQualitySchema.nullable(),
+  position_status: z.enum(positionStatuses).nullable(),
+  higher_timeframe_bias: higherTimeframeBiasSchema.nullable(),
+  lower_timeframe_behavior: lowerTimeframeBehaviorSchema.nullable(),
+  key_levels: keyLevelsSchema.nullable(),
+  scenarios: z.array(scenarioSchema).nullable(),
+  equity_potential: equityPotentialSchema.nullable(),
+  management_guidance: managementGuidanceSchema.nullable(),
+  verdict: z.string().nullable()
 });
 
 export const setupsSummarySchema = z.object({
