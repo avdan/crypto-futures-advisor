@@ -4,10 +4,11 @@ import type { HealthzResponse } from "@binance-advisor/shared";
 import { fetchHealthz } from "./api/health";
 import { DashboardView } from "./views/DashboardView";
 import { PositionsView } from "./views/PositionsView";
+import { SetupsView } from "./views/SetupsView";
 import "./styles.css";
 
 type UiStatus = "checking" | "online" | "offline";
-type Tab = "dashboard" | "positions";
+type Tab = "dashboard" | "positions" | "setups";
 
 export function App() {
   const apiBaseUrl = useMemo(
@@ -90,6 +91,12 @@ export function App() {
         >
           Positions
         </button>
+        <button
+          className={`tab ${tab === "setups" ? "tabActive" : ""}`}
+          onClick={() => setTab("setups")}
+        >
+          Setups
+        </button>
       </nav>
 
       {tab === "dashboard" ? (
@@ -99,8 +106,10 @@ export function App() {
           lastCheckedAt={lastCheckedAt}
           error={error}
         />
-      ) : (
+      ) : tab === "positions" ? (
         <PositionsView apiBaseUrl={apiBaseUrl} apiOnline={uiStatus === "online"} />
+      ) : (
+        <SetupsView apiBaseUrl={apiBaseUrl} apiOnline={uiStatus === "online"} />
       )}
     </div>
   );

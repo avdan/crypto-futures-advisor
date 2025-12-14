@@ -5,6 +5,8 @@ import { healthRoutes } from "./routes/health.js";
 import { futuresRoutes } from "./routes/futures.js";
 import { futuresAnalysisRoutes } from "./routes/futuresAnalysis.js";
 import { orderPlanRoutes } from "./routes/orderPlan.js";
+import { watchlistRoutes } from "./routes/watchlist.js";
+import { scannerRoutes } from "./routes/scanner.js";
 
 function parseCorsOrigin(raw: string | undefined): true | string[] {
   if (!raw) return true;
@@ -29,6 +31,8 @@ export async function buildApp() {
   await app.register(futuresRoutes);
   await app.register(futuresAnalysisRoutes);
   await app.register(orderPlanRoutes);
+  await app.register(watchlistRoutes);
+  await app.register(scannerRoutes);
 
   app.get("/", async () => ({ service: "binance-advisor-api" }));
 

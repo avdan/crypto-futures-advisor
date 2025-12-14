@@ -56,3 +56,6 @@ $RECYCLE.BIN/
 ### Misc ###
 *.swp
 *.swo
+
+### Local app data ###
+apps/api/.data/
