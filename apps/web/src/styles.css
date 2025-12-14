@@ -662,3 +662,232 @@ h1 {
 .pnlWarn {
   color: var(--checking);
 }
+
+/* Setup Cards Grid */
+.setupCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.emptySetups {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.emptySetupsIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.emptySetupsText {
+  font-size: 14px;
+}
+
+/* Setup Card */
+.setupCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.setupCardLong {
+  border-left: 3px solid var(--online);
+}
+
+.setupCardShort {
+  border-left: 3px solid var(--offline);
+}
+
+/* Card Header */
+.setupCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.setupCardSymbol {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.setupDirectionBadge {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+.setupCardMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.setupScore {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.setupScoreLabel {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Price Levels */
+.setupPriceLevels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+
+.setupPriceItem {
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.setupPriceItem:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.setupPriceLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.setupPriceEntry .setupPriceLabel {
+  color: var(--muted);
+}
+
+.setupPriceSL .setupPriceLabel {
+  color: var(--offline);
+}
+
+.setupPriceTP .setupPriceLabel {
+  color: var(--online);
+}
+
+.setupPriceValue {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.setupPriceSL .setupPriceValue {
+  color: var(--offline);
+}
+
+.setupPriceTP .setupPriceValue {
+  color: var(--online);
+}
+
+/* Risk/Reward Section */
+.setupRiskReward {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+
+.setupRiskItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.setupRiskItem:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.setupRiskIcon {
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.setupRiskLoss .setupRiskIcon {
+  background: rgba(255, 77, 77, 0.15);
+  color: var(--offline);
+}
+
+.setupRiskProfit .setupRiskIcon {
+  background: rgba(43, 213, 118, 0.15);
+  color: var(--online);
+}
+
+.setupRiskLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.setupRiskLoss .setupRiskLabel {
+  color: var(--offline);
+}
+
+.setupRiskProfit .setupRiskLabel {
+  color: var(--online);
+}
+
+.setupRiskValue {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.setupRiskLoss .setupRiskValue {
+  color: var(--offline);
+}
+
+.setupRiskProfit .setupRiskValue {
+  color: var(--online);
+}
+
+/* Card Footer */
+.setupCardFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.setupDetailItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.setupDetailLabel {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.setupDetailValue {
+  font-weight: 700;
+}
+
+.setupStrategy {
+  font-size: 10px;
+  text-transform: capitalize;
+}

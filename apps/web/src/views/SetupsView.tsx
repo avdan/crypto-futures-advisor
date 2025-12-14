@@ -94,27 +94,90 @@ export function SetupsView({ apiBaseUrl, apiOnline }: Props) {
     }
   }, [apiBaseUrl, symbolsText]);
 
-  function SetupRow({ s }: { s: SetupCandidate }) {
+  function SetupCard({ s }: { s: SetupCandidate }) {
+    const isLong = s.direction === "LONG";
     return (
-      <tr>
-        <td className="mono">{s.symbol}</td>
-        <td className="mono">{s.timeframe}</td>
-        <td>
-          <span className={s.direction === "LONG" ? "badgeOk" : "badgeWarn"}>{s.direction}</span>
-        </td>
-        <td className="mono">{s.strategy}</td>
-        <td className="right mono">{s.score}</td>
-        <td className="right mono">
-          {s.entryZone ? `${formatNumber(s.entryZone[0], 2)}–${formatNumber(s.entryZone[1], 2)}` : formatNumber(s.entry, 2)}
-        </td>
-        <td className="right mono">{formatNumber(s.stopLoss, 2)}</td>
-        <td className="right mono">{formatNumber(s.takeProfit, 2)}</td>
-        <td className="right mono">{s.rr ? formatNumber(s.rr, 2) : "-"}</td>
-        <td className="right mono">{s.sizing ? formatNumber(s.sizing.quantity, 4) : "-"}</td>
-        <td className="right mono pnlNeg">{s.sizing ? `$${formatNumber(s.sizing.riskUsd, 0)}` : "-"}</td>
-        <td className="right mono pnlPos">{s.sizing ? `$${formatNumber(s.sizing.rewardUsd, 0)}` : "-"}</td>
-        <td className="right mono">{s.sizing ? `${formatNumber(s.sizing.leverageRequired, 1)}x` : "-"}</td>
-      </tr>
+      <div className={`setupCard ${isLong ? "setupCardLong" : "setupCardShort"}`}>
+        {/* Header: Symbol, Direction, Score */}
+        <div className="setupCardHeader">
+          <div className="setupCardSymbol">
+            <span className="mono">{s.symbol}</span>
+            <span className={`setupDirectionBadge ${isLong ? "badgeOk" : "badgeWarn"}`}>
+              {s.direction}
+            </span>
+          </div>
+          <div className="setupCardMeta">
+            <span className="setupScore">{s.score}</span>
+            <span className="setupScoreLabel">score</span>
+          </div>
+        </div>
+
+        {/* Price Levels */}
+        <div className="setupPriceLevels">
+          <div className="setupPriceItem setupPriceEntry">
+            <div className="setupPriceLabel">ENTRY</div>
+            <div className="setupPriceValue mono">
+              {s.entryZone
+                ? `${formatNumber(s.entryZone[0], 2)} – ${formatNumber(s.entryZone[1], 2)}`
+                : formatNumber(s.entry, 2)}
+            </div>
+          </div>
+          <div className="setupPriceItem setupPriceSL">
+            <div className="setupPriceLabel">STOP LOSS</div>
+            <div className="setupPriceValue mono">{formatNumber(s.stopLoss, 2)}</div>
+          </div>
+          <div className="setupPriceItem setupPriceTP">
+            <div className="setupPriceLabel">TAKE PROFIT</div>
+            <div className="setupPriceValue mono">{formatNumber(s.takeProfit, 2)}</div>
+          </div>
+        </div>
+
+        {/* Risk/Reward */}
+        <div className="setupRiskReward">
+          <div className="setupRiskItem setupRiskLoss">
+            <div className="setupRiskIcon">↓</div>
+            <div className="setupRiskContent">
+              <div className="setupRiskLabel">MAX LOSS</div>
+              <div className="setupRiskValue mono">
+                {s.sizing ? `-$${formatNumber(s.sizing.riskUsd, 0)}` : "-"}
+              </div>
+            </div>
+          </div>
+          <div className="setupRiskItem setupRiskProfit">
+            <div className="setupRiskIcon">↑</div>
+            <div className="setupRiskContent">
+              <div className="setupRiskLabel">TARGET PROFIT</div>
+              <div className="setupRiskValue mono">
+                {s.sizing ? `+$${formatNumber(s.sizing.rewardUsd, 0)}` : "-"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer: Details */}
+        <div className="setupCardFooter">
+          <div className="setupDetailItem">
+            <span className="setupDetailLabel">R:R</span>
+            <span className="setupDetailValue mono">{s.rr ? `${formatNumber(s.rr, 2)}` : "-"}</span>
+          </div>
+          <div className="setupDetailItem">
+            <span className="setupDetailLabel">Qty</span>
+            <span className="setupDetailValue mono">{s.sizing ? formatNumber(s.sizing.quantity, 4) : "-"}</span>
+          </div>
+          <div className="setupDetailItem">
+            <span className="setupDetailLabel">Lev</span>
+            <span className="setupDetailValue mono">{s.sizing ? `${formatNumber(s.sizing.leverageRequired, 1)}x` : "-"}</span>
+          </div>
+          <div className="setupDetailItem">
+            <span className="setupDetailLabel">TF</span>
+            <span className="setupDetailValue mono">{s.timeframe}</span>
+          </div>
+          <div className="setupDetailItem">
+            <span className="setupDetailLabel">Strategy</span>
+            <span className="setupDetailValue mono setupStrategy">{s.strategy.replace(/_/g, " ")}</span>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -257,38 +320,18 @@ export function SetupsView({ apiBaseUrl, apiOnline }: Props) {
         </div>
       ) : null}
 
-      <div className="tableWrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Symbol</th>
-              <th>TF</th>
-              <th>Dir</th>
-              <th>Strategy</th>
-              <th className="right">Score</th>
-              <th className="right">Entry</th>
-              <th className="right">SL</th>
-              <th className="right">TP</th>
-              <th className="right">R:R</th>
-              <th className="right">Qty</th>
-              <th className="right">Risk $</th>
-              <th className="right">Reward $</th>
-              <th className="right">Lev</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topSetups.length === 0 ? (
-              <tr>
-                <td colSpan={13} className="emptyCell">
-                  Run a scan to see setups.
-                </td>
-              </tr>
-            ) : (
-              topSetups.map((s) => <SetupRow key={`${s.symbol}:${s.timeframe}:${s.strategy}`} s={s} />)
-            )}
-          </tbody>
-        </table>
-      </div>
+      {topSetups.length === 0 ? (
+        <div className="emptySetups">
+          <div className="emptySetupsIcon">📊</div>
+          <div className="emptySetupsText">Run a scan to see setups</div>
+        </div>
+      ) : (
+        <div className="setupCardsGrid">
+          {topSetups.map((s) => (
+            <SetupCard key={`${s.symbol}:${s.timeframe}:${s.strategy}`} s={s} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
